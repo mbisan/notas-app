@@ -1,0 +1,52 @@
+<div class="editor-placeholder" id="editor-0"
+  ondrop="handleDrop(event)"
+  ondragover="handleDragOver(event)"
+>
+<div class="cell-separator-container">
+  <div class="cell-separator"></div>
+  <div class="new-block-btn" onclick="handleNewBlock('editor-0')">+</div>
+</div>
+</div>
+
+{% for item in items %}
+<div
+    class="block"
+    id="block-{{ item.index }}"
+    ondblclick="handleNewBlock('block-{{ item.index }}')"
+    >
+
+  <div 
+    class="drag-handle"
+    id="drag-{{ item.index }}"
+    draggable="true"
+    ondragstart="handleDragStart(event)"
+    ondragend="handleDragEnd(event)"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 10h16v2H4zm0-3h16v2H4zm0 6h16v2H4z"/></svg>
+  </div>
+  <div class="block-info-actions-created">
+    {% if item.created %}
+      <span class="block-timestamp">Created: {{ item.created }}</span>
+    {% endif %}
+  </div>
+  <div class="block-info-actions">
+    {% if item.modified %}
+      <span class="block-timestamp">Modified: {{ item.modified }}</span>
+    {% endif %}
+    
+    <div class="delete-block-btn" data-block-index="{{ item.index }}" onclick="deleteBlock('block-{{ item.index }}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5.755 20.283 4 8h16l-1.755 12.283A2 2 0 0 1 16.265 22h-8.53a2 2 0 0 1-1.98-1.717zM21 4h-5V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v1H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2z"/></svg></div>
+  </div>
+  {{ item.contentHTML | safe }}
+</div>
+
+<div class="editor-placeholder" id="editor-{{ item.index }}"
+  ondrop="handleDrop(event)"
+  ondragover="handleDragOver(event)"
+>
+<div class="cell-separator-container">
+  <div class="cell-separator"></div>
+  <div class="new-block-btn" onclick="handleNewBlock('editor-{{ item.index }}')">+</div>
+</div>
+</div>
+
+{% endfor %}

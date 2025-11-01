@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Imagenes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<div id="top-bar">
+    <div id="sidebar-toggles">
+        <button id="toggle-left-sidebar" title="Toggle Left Sidebar" onclick="toggleLeftSidebar()">
+            <span class="icon"></span> </button>
+    </div>
+
+    <div id="link-inicio">
+        <a href="/">Inicio</a>
+    </div>
+
+    <div id="search-bar-container">
+        <input type="text" id="search-input" placeholder="Buscar...">
+    </div>
+    
+    <div id="sidebar-toggles">
+        <button id="toggle-right-sidebar" title="Toggle Right Sidebar" onclick="toggleRightSidebar()">
+            <span class="icon"></span> </button>
+    </div>
+</div>
+
+<div id="layout">
+    <div id="left-sidebar"></div>
+
+    <div id="main-content">
+        <a href="javascript:history.back()">Volver</a>
+        {% for image in images %}
+        <p>{{ image }}</p>
+        <img style="max-width: max-content;" src="{{ image }}">
+        {% endfor %}
+    </div>
+
+    <div id="right-sidebar"></div>
+</div>
+
+<script src="{{ url_for('static', filename='editor.js') }}"></script>
+</body>
+</html>

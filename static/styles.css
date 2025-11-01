@@ -1,0 +1,373 @@
+/* Reset some default styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Top bar: always visible */
+#top-bar {
+  position: sticky;       /* stays on top while scrolling */
+  top: 0;
+  height: 60px;
+  background-color: #333;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1000;          /* above content */
+  justify-content: space-between;
+}
+
+/* Layout container: sidebars + main content */
+#layout {
+  display: flex;
+  height: calc(100vh - 60px); /* full height minus top bar */
+}
+
+/* Sidebars */
+#left-sidebar, #right-sidebar {
+  width: 200px;
+  background-color: #f4f4f4;
+  padding: 20px;
+  overflow-y: auto;       /* scroll if content is taller than viewport */
+
+  transition: width 0.3s ease, padding 0.3s ease;
+}
+
+.left-sidebar-hidden {
+    width: 0 !important;
+    padding: 0 !important;
+}
+
+.right-sidebar-hidden {
+    width: 0 !important;
+    padding: 0 !important;
+}
+
+/* Main content */
+#main-content {
+  flex: 1;                 /* take remaining space */
+  padding: 20px;
+  overflow-y: auto;        /* scroll if content is taller than viewport */
+  background-color: #fff;
+  overflow-x: visible;
+  z-index: 100;
+}
+
+/* Optional: scrollbars styling */
+#main-content::-webkit-scrollbar,
+#left-sidebar::-webkit-scrollbar,
+#right-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+#main-content::-webkit-scrollbar-thumb,
+#left-sidebar::-webkit-scrollbar-thumb,
+#right-sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.3);
+  border-radius: 4px;
+}
+
+.block {
+  margin-bottom: 0px;
+  position: relative;
+}
+
+.cell-separator-container {
+  width: 100%;
+  height: 18px;
+  background-color: transparent;
+}
+
+.new-block-btn {
+  position: relative;
+  left: 50%;
+  top: 0%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, 0px);
+  color: black;
+  opacity: 0;
+  font-weight: bolder;
+  cursor: pointer;
+  transition: opacity 0.3s;
+  border: 1px solid rgba(0, 0, 0, 1);
+  border-radius: 7px;
+  text-align: center;
+  line-height: 12px;
+}
+
+.cell-separator {
+  border: 0;
+  height: 2px;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0));
+  margin-top: 2px;
+}
+
+.cell-separator-container:hover .new-block-btn {
+  opacity: 1;
+}
+
+/* Search Bar */
+#search-bar-container {
+  flex-grow: 1;
+  max-width: 500px;
+  margin: 0 20px;
+}
+
+#search-input {
+  width: 100%;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 20px;
+  background-color: #3e4451;
+  color: white;
+  font-size: 16px;
+}
+
+#search-input::placeholder {
+  color: #a0a8b5;
+}
+
+/* Sidebar Toggle Buttons */
+#sidebar-toggles {
+  display: flex;
+  gap: 10px; 
+}
+
+#sidebar-toggles button {
+  background: none;
+  border: 1px solid #61afef;
+  color: #61afef;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+#sidebar-toggles button:hover {
+  background-color: #61afef;
+  color: #282c34;
+}
+
+#toggle-left-sidebar .icon::before { 
+    content: '«'; 
+} 
+
+#toggle-right-sidebar .icon::before { 
+    content: '»'; 
+} 
+
+#layout.left-hidden #toggle-left-sidebar .icon::before { 
+    content: '»'; 
+}
+
+#layout.right-hidden #toggle-right-sidebar .icon::before { 
+    content: '«'; 
+}
+
+/* Info and Action Container (Initially Hidden) */
+.block-info-actions {
+  position: absolute;
+  left: 100%; /* Position far to the left of the block */
+  top: 0%;
+  width: 200px;
+  height: 18px;
+  transform: translate(-200px, -18px);
+  opacity: 0;
+  transition: opacity 0.3s;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  pointer-events: none; /* Allows clicks to pass through when hidden */
+  z-index: 50;
+}
+
+.block-info-actions-created {
+  position: absolute;
+  right: 100%; /* Position far to the left of the block */
+  top: 0%;
+  width: 200px;
+  height: 18px;
+  transform: translate(200px, -18px);
+  opacity: 0;
+  transition: opacity 0.3s;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  pointer-events: none; /* Allows clicks to pass through when hidden */
+  z-index: 50;
+}
+
+.block:hover .block-info-actions {
+  opacity: 1;
+  pointer-events: all; /* Allows interaction when visible */
+}
+
+.block:hover .block-info-actions-created {
+  opacity: 1;
+  pointer-events: all; /* Allows interaction when visible */
+}
+
+/* Timestamps */
+.block-timestamp {
+  font-size: 0.7em;
+  color: #000000;
+  margin: auto
+}
+
+/* Delete Button */
+.delete-block-btn {
+  margin-left: 16px;
+  margin-right: 16px;
+  width: 16px;
+  height: 16px;
+  pointer-events: all; /* Ensure button is clickable */
+  color: black;
+}
+
+.delete-block-btn:hover svg {
+  fill: red;
+}
+
+.right-sidebar-link {
+  cursor: pointer;
+}
+
+.codemirror-editing {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.drag-handle {
+    position: absolute;
+    left: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: grab;
+    opacity: 0.3;
+    padding: 5px;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+}
+
+.drag-handle svg {
+    width: 20px;
+    height: 20px;
+    fill: #ccc;
+}
+
+.block-dragging {
+    opacity: 0.5;
+    border: 2px dashed #007bff;
+}
+
+.separatos-drag-over {
+    border-top: 2px solid #007bff;
+}
+
+#undo-button, #redo-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  pointer-events: none;
+}
+
+#save-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  pointer-events: none;
+  opacity: 0;
+}
+
+#link-inicio a:visited, #link-inicio a:link {
+  color: white;
+}
+
+.block table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+
+.block th, td {
+  min-width: 30px;
+}
+
+.CodeMirror-hints {
+    z-index: 200 !important; /* Asegura que siempre esté por encima de todo */
+}
+
+.block-info-actions-visible {
+  position: absolute;
+  left: 100%; /* Position far to the left of the block */
+  top: 0%;
+  width: 200px;
+  height: 18px;
+  transform: translate(-200px, -18px);
+  transition: opacity 0.3s;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  pointer-events: none; /* Allows clicks to pass through when hidden */
+  z-index: 50;
+}
+
+.block-info-actions-created-visible {
+  position: absolute;
+  right: 100%; /* Position far to the left of the block */
+  top: 0%;
+  width: 200px;
+  height: 18px;
+  transform: translate(200px, -18px);
+  transition: opacity 0.3s;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  pointer-events: none; /* Allows clicks to pass through when hidden */
+  z-index: 50;
+}
+
+.fichero-modificado {
+  margin-bottom: 30px;
+}
+
+#search-results {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  background-color: #1e1e1e;
+  color: white;
+  z-index: 2000;
+  max-height: 60vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  display: none;
+  padding: 10px 20px;
+}
+
+.search-result-item {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.search-result-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.search-result-item h4 {
+  margin-bottom: 5px;
+  font-size: 1em;
+  color: #61afef;
+}
+
+.search-result-item small {
+  color: #aaa;
+}

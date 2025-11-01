@@ -1,0 +1,34 @@
+<div class="editor-placeholder"
+>
+<div class="cell-separator-container">
+  <div class="cell-separator"></div>
+</div>
+</div>
+
+{% for item in items %}
+<p class="fichero-modificado">{{ item.link }}</p>
+<div
+    class="block"
+    ondblclick="window.location.replace('{{ item.link }}');"
+    >
+  <div class="block-info-actions-created-visible">
+    {% if item.created %}
+      <span class="block-timestamp">Created: {{ item.created }}</span>
+    {% endif %}
+  </div>
+  <div class="block-info-actions-visible">
+    {% if item.modified %}
+      <span class="block-timestamp">Modified: {{ item.modified }}</span>
+    {% endif %}
+  </div>
+  {{ item.contentHTML | safe }}
+</div>
+
+<div class="editor-placeholder"
+>
+<div class="cell-separator-container">
+  <div class="cell-separator"></div>
+</div>
+</div>
+
+{% endfor %}

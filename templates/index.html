@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Editor</title>
+
+    <script>
+        window.MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+        }
+        };
+    </script>
+    <script id="MathJax-script"
+            src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/hint/show-hint.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/markdown/markdown.min.js"></script>
+    <!-- http://mozilla.github.io/nunjucks/getting-started.html -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nunjucks/3.2.4/nunjucks.js" integrity="sha512-XWC7xjSwJ8DLAylsZft1S90HfKdaMn4b7apTYmYu1Q8E0jdKeJRQJEmvJX5kS08Bt8+uldKObLAM0FD0EsOJTQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- hljs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" integrity="sha512-EBLzUL8XLl+va/zAsmXwS7Z2B1F9HUHkZwyS/VKwh3S7T/U0nF4BaU29EP/ZSf6zgiIxYAnKLu6bJ8dqpmX5uw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/python.min.js" integrity="sha512-/uCTceIDOniHf+VUKbCnP/x6GQSRrm4GwUtQYMgKa9yIZPGzlR04flSsD+2or7bPn44VY9inIHI4cwNCcZmJDw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/sql.min.js" integrity="sha512-RzK8J6sL3xE7eyppcm7hjCq6fpW1kDlnKPO5jX+Z++/ChYXqsq5AoFq0z78g3jf/1DV5wMBZukqIyb+0xPkCVw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/bash.min.js" integrity="sha512-nQ9BQEzuov+Ry6EIH8ve7VKKdOG91Ix3SAQcFmOiBR5qG8sJONrph1InWTJOGjfP5QkSTSy4VnkEsPMoFYRsUQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- marked -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked-highlight@2.2.2/lib/index.umd.min.js"></script>
+
+    <!-- luxon para las fechas -->
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.7.2/build/global/luxon.min.js"></script>
+</head>
+<body>
+
+<div id="top-bar">
+    <div id="sidebar-toggles">
+        <button id="toggle-left-sidebar" title="Toggle Left Sidebar" onclick="toggleLeftSidebar()">
+            <span class="icon"></span> </button>
+    </div>
+
+    <div id="undo-redo">
+        <button id="undo-button" title="Deshacer" onclick="handleUndoAction()">
+            <span class="icon">↩️</button>
+        <button id="redo-button" title="Rehacer" onclick="handleRedoAction()">
+            <span class="icon">↪️</button>
+    </div>
+
+    <div id="link-inicio">
+        <a href="/">Inicio</a>
+    </div>
+
+    <div id="search-bar-container">
+        <input type="text" id="search-input" placeholder="Buscar...">
+    </div>
+
+    <div id="search-results"></div>
+
+    <button id="save-button" title="Save" onclick="saveToServer()">
+        <span class="icon">💾</button>
+    
+    <div id="sidebar-toggles">
+        <button id="toggle-right-sidebar" title="Toggle Right Sidebar" onclick="toggleRightSidebar()">
+            <span class="icon"></span> </button>
+    </div>
+</div>
+
+<div id="layout">
+    <div id="left-sidebar"></div>
+
+    <div id="main-content"></div>
+
+    <div id="right-sidebar"></div>
+</div>
+
+<script src="{{ url_for('static', filename='editor.js') }}"></script>
+</body>
+</html>
