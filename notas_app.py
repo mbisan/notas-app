@@ -5,24 +5,78 @@ import datetime
 import hashlib
 
 from flask import Flask, render_template, jsonify, send_from_directory, redirect, url_for, request
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
+
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 notas_app = Flask(__name__)
+notas_app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite"
+notas_app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+notas_app.config["SECRET_KEY"] = os.environ.get('SECRET_KEY', 'secret_key')
+
+db = SQLAlchemy(notas_app)
+login_manager = LoginManager()
+login_manager.init_app(notas_app)
+login_manager.login_view = "login"
 
 NOTES_DIR = os.environ.get('NOTES_DIR', './notas')
+USERNAME = os.environ.get('USERNAME', 'admin')
+# password hash generated with generate_password_hash, this example is with "admin"
+PASSWORD = os.environ.get('PASSWORD', 'admin')
 
+class Users(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(250), unique=True, nullable=False)
+    password = db.Column(db.String(250), nullable=False)
+
+if not os.path.exists("db.sqlite"):
+    with notas_app.app_context():
+        db.create_all()
+
+    if not Users.query.filter_by(username=USERNAME).first():
+        hashed_password = generate_password_hash(PASSWORD, method="pbkdf2:sha256")
+
+        new_user = Users(username=USERNAME, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.get(int(user_id))
+
+@notas_app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        user = Users.query.filter_by(username=username).first()
+
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return redirect(url_for("main_page"))
+        else:
+            return render_template("login.html", error="Invalid username or password")
+
+    return render_template("login.html")
 
 @notas_app.route('/', methods=['GET'])
+@login_required
 def main_page():
     return render_template('index.html')
 
 @notas_app.route('/images', methods=['GET'])
+@login_required
 def view_images():
     images_list = list_all_files_and_directories(os.path.join(os.path.abspath(NOTES_DIR), 'images'))
     images_list = list(filter(lambda x: x.endswith('.png') or x.endswith('.jpg'), images_list))
     return render_template('images.html', images = images_list)
 
 @notas_app.route('/<path:slug>', methods=['GET'])
+@login_required
 def view_note(slug):
     if slug.endswith('.png') or slug.endswith('.jpg'):
         return send_from_directory(directory=os.path.dirname(os.path.join(NOTES_DIR, slug)), path=os.path.basename(slug))
@@ -34,6 +88,7 @@ def view_note(slug):
     return render_template('index.html')
 
 @notas_app.route('/load/<path:slug>', methods=['GET'])
+@login_required
 def load_note(slug):
 
     file_dir=os.path.join(NOTES_DIR, slug)
@@ -67,6 +122,7 @@ def load_note(slug):
         return 'Error al cargar el fichero', 500
     
 @notas_app.route('/save/<path:slug>', methods=['POST'])
+@login_required
 def save_note(slug):
     file_dir=os.path.join(NOTES_DIR, slug)
     try:
@@ -115,6 +171,7 @@ def list_all_files_and_directories(start_path):
 
 
 @notas_app.route('/load-everything', methods=['GET'])
+@login_required
 def load_everything():
     try:
         todos_markdown = list(filter(
@@ -145,6 +202,7 @@ def load_everything():
         return 'Error al cargar los bloques', 500
 
 @notas_app.route('/load-dirtree/', methods=['GET'])
+@login_required
 def load_dirtree_main():
     try:
         dirtree = get_files_and_directories(os.path.abspath(NOTES_DIR))
@@ -154,6 +212,7 @@ def load_dirtree_main():
         return 'Error al cargar el fichero', 500
     
 @notas_app.route('/load-hint', methods=['GET'])
+@login_required
 def load_possible_endpoints():
     try:
         files = list_all_files_and_directories(os.path.abspath(NOTES_DIR))
@@ -163,6 +222,7 @@ def load_possible_endpoints():
         return 'Error al cargar las hints', 500
 
 @notas_app.route('/load-dirtree/<path:slug>', methods=['GET'])
+@login_required
 def load_dirtree(slug):
     slug_dir = os.path.join(NOTES_DIR, slug)
     if not os.path.isdir(slug_dir):
@@ -175,6 +235,7 @@ def load_dirtree(slug):
         return 'Error al cargar el fichero', 500
 
 @notas_app.route('/upload-image/<path:slug>', methods=['POST'])
+@login_required
 def cargar_imagen(slug):
     slug_dir = os.path.join(NOTES_DIR, slug)
     if not os.path.isdir(slug_dir):
@@ -208,6 +269,7 @@ def cargar_imagen(slug):
 
 
 @notas_app.route('/nunjucks-templates/<slug>', methods=['GET'])
+@login_required
 def load_nunjucks_teplate(slug):
     if os.path.exists(f'./nunjucks-templates/{slug}'):
         try:
@@ -219,6 +281,11 @@ def load_nunjucks_teplate(slug):
     else:
         return 'No existe la plantilla', 500 
 
+@notas_app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("main_page"))
 
 if __name__ == '__main__':
     notas_app.run(debug=True, port=8585)

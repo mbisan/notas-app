@@ -23,4 +23,4 @@ Vista de imagenes cargadas. OK
 
 Cuando escribo / quiero poder hacer link a algún otro fichero en la carpeta notas o incrustar imagenes. OK
 
-https://www.digitalocean.com/community/tutorials/how-to-add-authentication-to-your-app-with-flask-login
+https://www.geeksforgeeks.org/python/how-to-add-authentication-to-your-app-with-flask-login/

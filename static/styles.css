@@ -289,6 +289,10 @@
   color: white;
 }
 
+#link-logout a:visited, #link-logout a:link {
+  color: white;
+}
+
 .block table, th, td {
   border: 1px solid black;
   border-collapse: collapse;
