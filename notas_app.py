@@ -32,13 +32,12 @@ class Users(UserMixin, db.Model):
     username = db.Column(db.String(250), unique=True, nullable=False)
     password = db.Column(db.String(250), nullable=False)
 
-if not os.path.exists("db.sqlite"):
-    with notas_app.app_context():
+with notas_app.app_context():
+    if not os.path.exists("db.sqlite"):
         db.create_all()
 
     if not Users.query.filter_by(username=USERNAME).first():
         hashed_password = generate_password_hash(PASSWORD, method="pbkdf2:sha256")
-
         new_user = Users(username=USERNAME, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
