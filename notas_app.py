@@ -207,7 +207,8 @@ def load_dirtree_main():
         dirtree = get_files_and_directories(os.path.abspath(NOTES_DIR))
 
         return jsonify(dirtree)
-    except:
+    except Exception as e:
+        print(e)
         return 'Error al cargar el fichero', 500
     
 @notas_app.route('/load-hint', methods=['GET'])
@@ -217,7 +218,8 @@ def load_possible_endpoints():
         files = list_all_files_and_directories(os.path.abspath(NOTES_DIR))
 
         return jsonify(files)
-    except:
+    except Exception as e:
+        print(e)
         return 'Error al cargar las hints', 500
 
 @notas_app.route('/load-dirtree/<path:slug>', methods=['GET'])
@@ -230,7 +232,8 @@ def load_dirtree(slug):
         dirtree = get_files_and_directories(os.path.abspath(slug_dir))
 
         return jsonify(dirtree)
-    except:
+    except Exception as e:
+        print(e)
         return 'Error al cargar el fichero', 500
 
 @notas_app.route('/upload-image/<path:slug>', methods=['POST'])
@@ -275,7 +278,8 @@ def load_nunjucks_teplate(slug):
             with open(f'./nunjucks-templates/{slug}', 'r') as f:
                 text_content = f.read()
             return text_content, 200
-        except:
+        except Exception as e:
+            print(e)
             return 'Error al cargar template', 500
     else:
         return 'No existe la plantilla', 500 
