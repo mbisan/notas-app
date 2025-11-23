@@ -24,3 +24,22 @@ Vista de imagenes cargadas. OK
 Cuando escribo / quiero poder hacer link a algún otro fichero en la carpeta notas o incrustar imagenes. OK
 
 https://www.geeksforgeeks.org/python/how-to-add-authentication-to-your-app-with-flask-login/
+
+docker build -t notes-app .
+
+docker run -d \
+  -p 8585:5000 \
+  -e USERNAME=martin \
+  -e PASSWORD=password \
+  -e NOTES_DIR=/notes \
+  -v ~/notes:/notes \
+  notes-app
+
+
+docker run \
+  -p 8585:5000 \
+  -e USERNAME=martin \
+  -e PASSWORD=password \
+  -e NOTES_DIR=/notes \
+  -v ~/notes:/notes \
+  notes-app

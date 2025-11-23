@@ -30,7 +30,7 @@ Test
 ''')
 
 notas_app = Flask(__name__)
-notas_app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite"
+notas_app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:////tmp/notas_app.db'
 notas_app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 notas_app.config["SECRET_KEY"] = os.environ.get('SECRET_KEY', 'secret_key')
 
