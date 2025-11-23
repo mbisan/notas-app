@@ -1,0 +1,27 @@
+{% if selectedDate %}
+    <h4>Contenido del {{ selectedDate }}</h4>
+{% else %}
+    <h4>Modificado recientemente</h4>
+{% endif %}
+
+{% for linkData in linksToDisplay %}
+    <div class="link-item">
+        <a href="{{ linkData.link }}">{{ linkData.link.split('/').pop() }}</a>
+        <div class="link-details">
+            {% if selectedDate %}
+                {# Day Selected Mode: Show E, C, M, T #}
+                <span class="count-badge">E: {{ linkData.totalElements }}</span>
+                <span class="count-badge created-count">C: {{ linkData.createdCount }}</span>
+                <span class="count-badge modified-count">M: {{ linkData.modifiedCount }}</span>
+                <span class="count-badge todo-count">T: {{ linkData.totalTodos }}</span>
+            {% else %}
+                {# Default Mode: Show E, T #}
+                <span class="count-badge">E: {{ linkData.totalElements }}</span>
+                <span class="count-badge todo-count">T: {{ linkData.totalTodos }}</span>
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}
+{% if not linksToDisplay.length %}
+    <p class="no-results-message">Nada para mostrar</p>
+{% endif %}

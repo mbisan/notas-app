@@ -1,0 +1,39 @@
+{# Weekday Headers #}
+<div class="day-header">Lun</div>
+<div class="day-header">Mar</div>
+<div class="day-header">Mie</div>
+<div class="day-header">Jue</div>
+<div class="day-header">Vie</div>
+<div class="day-header">Sab</div>
+<div class="day-header">Dom</div>
+
+{# Calendar Cells #}
+{% for day in calendarDays %}
+    {% set classes = ["day-cell"] %}
+    {% if day.inactiveMonth %}
+        {% set classes = classes.concat(["inactive-month"]) %}
+    {% endif %}
+    {% if day.isFuture %}
+        {% set classes = classes.concat(["future-day"]) %}
+    {% endif %}
+    {% if day.isToday %}
+        {% set classes = classes.concat(["today"]) %}
+    {% endif %}
+
+    <div class="{{ classes | join(' ') }}" data-date="{{ day.dateString }}" onclick="toggleDaySelection('{{ day.dateString }}')">
+        <div class="day-number">{{ day.dayNumber }}</div>
+        {% if day.counts and not day.isFuture %}
+            <div class="event-counts">
+                {% if day.counts.created > 0 %}
+                    <span class="created-count">C: {{ day.counts.created }}</span>
+                {% endif %}
+                {% if day.counts.modified > 0 %}
+                    <span class="modified-count">M: {{ day.counts.modified }}</span>
+                {% endif %}
+                {% if day.counts.todos > 0 %}
+                    <span class="todo-count">T: {{ day.counts.todos }}</span>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+{% endfor %}

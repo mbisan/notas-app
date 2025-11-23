@@ -1,0 +1,192 @@
+/* Container for the whole calendar */
+.calendar-container {
+    width: 80%;
+    margin: 20px auto;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #fff;
+}
+
+/* Header for navigation and month/year display */
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0 10px;
+}
+
+.calendar-header h2 {
+    font-size: 1.2em;
+    margin: 0;
+}
+
+.calendar-header button {
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.calendar-header button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Calendar grid layout */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px; /* Small gap between cells */
+    background-color: #eee; /* Background for the grid lines */
+}
+
+/* Header for Weekdays (Sun, Mon, etc.) */
+.day-header {
+    background-color: #f0f0f0;
+    text-align: center;
+    padding: 5px 0;
+    font-weight: bold;
+    font-size: 0.85em;
+}
+
+/* Individual day cell */
+.day-cell {
+    background-color: #fff;
+    height: 45px; /* Give it some vertical space */
+    padding: 5px;
+    text-align: right;
+    border: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Style for days not in the current month */
+.inactive-month {
+    background-color: #f7f7f7;
+    color: #bbb;
+}
+
+/* Style for future days to be greyed out */
+.future-day {
+    background-color: #ddddff; /* Light blue tint to indicate future */
+    color: #999;
+}
+.future-day .event-counts {
+    display: none; /* Hide counts for future days */
+}
+
+/* Day number style (aligned right/top) */
+.day-number {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 5px;
+    text-align: left; /* Day number should be on the top left/right corner */
+}
+
+/* Event counts container */
+.event-counts {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start; /* Align counts to the left */
+    gap: 3px;
+    margin-top: auto; /* Push counts to the bottom of the cell */
+    font-size: 0.75em;
+    font-weight: bold;
+    overflow: hidden;
+}
+
+/* Style for Created events */
+.created-count {
+    color: white;
+    font-size: 7pt;
+    background-color: #007bff; /* Blue */
+    padding: 2px 5px;
+    border-radius: 3px;
+    line-height: 1;
+}
+
+/* Style for Modified events */
+.modified-count {
+    color: white;
+    font-size: 7pt;
+    background-color: #dc3545; /* Red */
+    padding: 2px 5px;
+    border-radius: 3px;
+    line-height: 1;
+}
+
+.todo-count {
+    color: white;
+    font-size: 7pt;
+    background-color: #ffc107;
+    padding: 2px 5px;
+    border-radius: 3px;
+    line-height: 1;
+}
+
+
+
+/* Styling for the Calendar Day Cells */
+.day-cell.selected-day {
+    background-color: #007bff; /* Primary blue color */
+    color: white;
+    border: 2px solid #0056b3;
+    font-weight: bold;
+}
+.day-cell.selected-day .day-number,
+.day-cell.selected-day .event-counts span {
+    color: white !important;
+}
+
+/* Styling for the Link List Container */
+.link-list-container {
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+.link-list-container h3 {
+    margin-top: 0;
+    font-size: 1.1em;
+}
+
+/* Individual Link Item */
+.link-item {
+    padding: 8px 0;
+    border-bottom: 1px dashed #eee;
+}
+.link-item:last-child {
+    border-bottom: none;
+}
+.link-item a {
+    font-weight: bold;
+    color: #333;
+    text-decoration: none;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* Details and Badges */
+.link-details {
+    font-size: 0.75em;
+    display: flex;
+    gap: 5px;
+}
+.count-badge {
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 8pt;
+    color: white;
+    background-color: #6c757d; /* Gray for general elements */
+}
+.count-badge.created-count {
+    background-color: #007bff; /* Blue */
+}
+.count-badge.modified-count {
+    background-color: #dc3545; /* Red */
+}
+.count-badge.todo-count {
+    background-color: #ffc107; /* Amber */
+}

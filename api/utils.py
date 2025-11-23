@@ -41,6 +41,7 @@ def list_all_files_and_directories(start_path):
     return sorted([item if len(item)>0 else '/' for item in all_items])
 
 def read_file(file_path, include_paths: bool = True):
+    file_path = os.path.abspath(file_path)
     with open(file_path, 'r') as f:
         raw_data = f.read()
 
@@ -52,7 +53,7 @@ def read_file(file_path, include_paths: bool = True):
         if include_paths:
             blocks.append({
                 'content': content.strip(),
-                'link': file_path,
+                'link': file_path.replace(os.path.abspath(NOTES_DIR), ''),
                 **header_values
             })
         else:

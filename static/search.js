@@ -20,7 +20,6 @@ searchInput.addEventListener("input", async (e) => {
         });
         if (!response.ok) throw new Error("Failed to load blocks");
         const searchresponse = await response.json();
-        console.log(searchresponse);
         renderSearchResults(searchresponse, query);
     } catch (err) {
         console.error("Error loading blocks:", err);
@@ -53,7 +52,6 @@ function renderSearchResults(matches, query) {
 }
 
 function highlightQuery(text, query) {
-    console.log(text);
     const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi");
     return text.replace(regex, `<mark style="background: #61afef; color: black;">$1</mark>`);
 }

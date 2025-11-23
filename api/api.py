@@ -212,3 +212,37 @@ def search():
     except Exception as e:
         print(e)
         return 'Error al cargar los bloques', 500
+
+@api.route('/summary', methods=['GET'])
+@login_required
+def summary():
+    slug_dir = os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'))
+    if not os.path.isdir(slug_dir):
+        slug_dir = os.path.dirname(slug_dir)
+
+    try:
+        todos_markdown = list(filter(
+            lambda x: x.endswith('.md'),
+            list_all_files_and_directories(os.path.abspath(slug_dir))
+        ))
+        
+        blocks = []
+        for file_dir in todos_markdown:
+            blocks += [
+                {
+                    "type": block['type'],
+                    "created": block['created'],
+                    "modified": block['modified'],
+                    "link": block['link'],
+                    "todos": block['content'].count('TODO')
+                }
+                for block in read_file(os.path.join(NOTES_DIR, file_dir.lstrip('/')))
+            ]
+
+        bloques_a_devolver = sorted(blocks, key=lambda x: datetime.datetime.strptime(x['modified'], '%Y-%m-%d %H:%M:%S'), reverse=True)
+
+        return jsonify(bloques_a_devolver)
+    except Exception as e:
+        print(e)
+        return 'Error al cargar los bloques', 500
+

@@ -18,6 +18,7 @@
     </script>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='calendario.css') }}">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
 
@@ -63,7 +64,17 @@
             </div>
         </div>
         <div id="note-editor">
-            <!-- Los bloques se renderizan aqui -->
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <button id="prevMonthBtn">◀</button>
+                    <h2 id="currentMonthYear"></h2>
+                    <button id="nextMonthBtn">▶</button>
+                </div>
+                <div id="calendarGrid" class="calendar-grid">
+                    </div>
+            </div>
+            <div id="linkList">
+            </div>
         </div>
     </main>
 
@@ -77,5 +88,6 @@
 
 <script src="{{ url_for('static', filename='directory.js') }}"></script>
 <script src="{{ url_for('static', filename='search.js') }}"></script>
+<script src="{{ url_for('static', filename='calendario.js') }}"></script>
 </body>
 </html>
