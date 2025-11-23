@@ -606,6 +606,7 @@ async function loadNote() {
 }
 
 const searchInput = document.getElementById("search-input");
+searchInput.value = '';
 const searchResults = document.getElementById("search-results");
 
 // Handle search input

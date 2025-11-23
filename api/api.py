@@ -5,7 +5,7 @@ import datetime
 import hashlib
 import shutil
 
-from flask import Blueprint, render_template, jsonify, send_from_directory, redirect, url_for, request
+from flask import Blueprint, render_template, jsonify, request
 from flask_login import login_required
 
 from werkzeug.utils import secure_filename
