@@ -1,14 +1,33 @@
 {% macro renderTree(items, is_child=false, depth=0) %}
+    {% if depth==0 %}
+    <div class="dir-item" style="margin-bottom: 25px;" ondblclick="createNoteOrDir()">
+    Nuevo Directorio/Nota
+    </div>
+    {% endif %}
     {% if upbutton!='' and depth==0 %}
     <div class="dir-item" ondblclick="window.location.href = '{{ upbutton }}'">
     ⬆️
     </div>
     {% endif %}
     {% for item in items %}
-        {% if item.is_dir %}
+        {% if item.is_dir and item.name=='images' %}
+            {# Imagenes #}
+            <div class="dir-container">
+                <div class="dir-item" onclick=" event.stopPropagation(); this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';">
+                    📁 {{ item.name }}
+                </div>
+                {# Children Container (dir-children) #}
+                <div class="dir-children" style="display: none;">
+                    {# Recursively call the macro to render children #}
+                    {% if item.children %}
+                        {{ renderTree(item.children, is_child=true, depth=depth+1) }}
+                    {% endif %}
+                </div>
+            </div>
+        {% elif item.is_dir %}
             {# Directory Item #}
             <div class="dir-container">
-                <div class="dir-item" onclick=" event.stopPropagation(); this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';" ondblclick="openFolder('{{ item.path }}')">
+                <div class="dir-item" onclick=" event.stopPropagation(); this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';" ondblclick="window.location.href = '{{ item.path }}';">
                     📁 {{ item.name }}
                 </div>
                 {# Children Container (dir-children) #}
@@ -26,17 +45,12 @@
                 🖼️ {{ item.name }}
             </div>
             {% else %}
-            <div class="file-item" data-path="{{ item.path }}" onclick="event.stopPropagation(); this.closest('#file-tree').querySelectorAll('.file-item').forEach(el => el.classList.remove('active')); this.classList.add('active'); loadNote('{{ item.path }}');">
+            <div class="file-item" data-path="{{ item.path }}" ondblclick="window.location.href = '{{ item.path }}';">
                 📄 {{ item.name }}
             </div>
             {% endif %}
         {% endif %}
     {% endfor %}
-    {% if depth==0 %}
-    <div class="dir-item" ondblclick="createNoteOrDir()">
-    Nuevo Directorio/Nota
-    </div>
-    {% endif %}
 {% endmacro %}
 
 {{ renderTree(dirtree, false, 0) }}

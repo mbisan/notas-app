@@ -20,8 +20,10 @@ api = Blueprint('api', import_name=__name__, url_prefix='/api')
 @api.route('/load', methods=['GET'])
 @login_required
 def load_note():
+    if not str(request.args.get('path')).endswith('.md'):
+        return 'Ruta no valida', 404
 
-    file_dir=os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'), str(request.args.get('note')).lstrip('/'))
+    file_dir=os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'))
     if not file_dir.endswith('.md'):
         return 'Solo se pueden cargar ficheros markdown (.md)', 500
     try:
@@ -52,7 +54,7 @@ def load_note():
 @api.route('/save', methods=['POST'])
 @login_required
 def save_note():
-    file_dir=os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'), str(request.args.get('note')).lstrip('/'))
+    file_dir=os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'))
     try:
         contenido = request.get_json()
         if contenido is None:
@@ -70,9 +72,8 @@ def save_note():
 @api.route('/trash', methods=['POST'])
 @login_required
 def delete_note():
-    file_dir=os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'), str(request.args.get('note')).lstrip('/'))
-    if file_dir.endswith('null'):
-        file_dir = os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'))
+    file_dir=os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'))
+
     try:
         if not os.path.exists(os.path.join(NOTES_DIR, 'papelera')):
             os.makedirs(os.path.join(NOTES_DIR, 'papelera'))
@@ -88,7 +89,11 @@ def delete_note():
 @api.route('/create', methods=['POST'])
 @login_required
 def create():
-    new_file_or_dir=os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'), str(request.args.get('name')).lstrip('/'))
+    new_file_or_dir=os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'))
+    if not os.path.isdir(new_file_or_dir):
+        new_file_or_dir = os.path.dirname(new_file_or_dir)
+    new_file_or_dir = os.path.join(new_file_or_dir, str(request.args.get('name')).lstrip('/'))
+
     try:
         if len(os.path.basename(new_file_or_dir).split('.'))==1:
             # directory
@@ -105,39 +110,6 @@ def create():
     except Exception as e:
         print(e)
         return 'Error al eliminar el fichero', 500
-
-
-
-# @api.route('/load-everything', methods=['GET'])
-# @login_required
-# def load_everything():
-#     try:
-#         todos_markdown = list(filter(
-#             lambda x: x.endswith('.md'),
-#             list_all_files_and_directories(os.path.abspath(NOTES_DIR))
-#         ))
-        
-#         blocks = []
-#         for file_dir in todos_markdown:
-#             with open(os.path.join(NOTES_DIR, file_dir[1:]), 'r') as f:
-#                 raw_data = f.read()
-
-#             regex_pattern = re.compile(r'<!--\s*(.*?)\s*-->(.*?)<!--\s*end\s*-->', re.DOTALL)
-
-#             for header, content in re.findall(regex_pattern, raw_data):
-#                 header_values: dict = eval('{' + header + '}')
-#                 blocks.append({
-#                     'created': header_values.get('created', None),
-#                     'modified': header_values.get('modified', None),
-#                     'content': content.strip(),
-#                     'link': file_dir
-#                 })
-
-#         bloques_a_devolver = sorted(blocks, key=lambda x: datetime.datetime.strptime(x['modified'], '%Y-%m-%d %H:%M:%S'), reverse=True)
-
-#         return jsonify(bloques_a_devolver)
-#     except Exception as e:
-#         return 'Error al cargar los bloques', 500
 
 @api.route('/tree', methods=['GET'])
 @login_required
@@ -159,7 +131,6 @@ def load_dirtree_main():
 @login_required
 def load_possible_endpoints():
     req_path = str(request.args.get('path')).lstrip('/')
-    print(req_path)
     path = os.path.join(NOTES_DIR, req_path)
 
     if not os.path.isdir(path):
@@ -192,6 +163,9 @@ def load_nunjucks_teplate():
 @login_required
 def cargar_imagen():
     slug_dir = os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'))
+    if not os.path.isdir(slug_dir):
+        slug_dir = os.path.dirname(slug_dir)
+
     slug_dir = os.path.join(slug_dir, 'images')
     if not os.path.exists(slug_dir):
         os.mkdir(slug_dir)
@@ -224,3 +198,44 @@ def cargar_imagen():
         return jsonify({'url': image_url}), 200
 
     return jsonify({'error': 'Error desconocido al subir el archivo'}), 500
+
+@api.route('/search', methods=['POST'])
+@login_required
+def search():
+    slug_dir = os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'))
+    if not os.path.isdir(slug_dir):
+        slug_dir = os.path.dirname(slug_dir)
+
+    search_query = request.get_json().get('query', '')
+    try:
+        todos_markdown = list(filter(
+            lambda x: x.endswith('.md'),
+            list_all_files_and_directories(os.path.abspath(slug_dir))
+        ))
+        
+        blocks = []
+        for file_dir in todos_markdown:
+            with open(os.path.join(NOTES_DIR, file_dir.lstrip('/')), 'r') as f:
+                raw_data = f.read()
+
+            regex_pattern = re.compile(r'<!--\s*(.*?)\s*-->(.*?)<!--\s*end\s*-->', re.DOTALL)
+
+            for header, content in re.findall(regex_pattern, raw_data):
+                header_values: dict = eval('{' + header + '}')
+                blocks.append({
+                    'content': content.strip(),
+                    'link': file_dir,
+                    **header_values
+                })
+
+        query_result = list(filter(
+            lambda x: search_query.lower() in x['content'].lower() or search_query.lower() in x['link'].lower(),
+            blocks
+        ))
+
+        bloques_a_devolver = sorted(query_result, key=lambda x: datetime.datetime.strptime(x['modified'], '%Y-%m-%d %H:%M:%S'), reverse=True)
+
+        return jsonify(bloques_a_devolver)
+    except Exception as e:
+        print(e)
+        return 'Error al cargar los bloques', 500

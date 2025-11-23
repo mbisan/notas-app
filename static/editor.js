@@ -421,12 +421,7 @@ async function saveBlock() {
 
 async function saveContent() {
     try {
-        const currentUrl = new URL(window.location.href)
-        const searchParams = currentUrl.searchParams;
-
-        if (!searchParams.get('note')) return;
-
-        const endpoint = `/api/save?path=${window.location.pathname}&note=${searchParams.get('note')}`;
+        const endpoint = `/api/save?path=${window.location.pathname}`;
         const response = await fetch(endpoint, {
             method: "POST",
             body: JSON.stringify(contenido),
@@ -442,6 +437,7 @@ async function saveContent() {
 }
 
 async function trashContent() {
+    if (window.location.pathname==="/") return;
 
     const isConfirmed = confirm("Seguro que quieres eliminar?");
 
@@ -451,25 +447,19 @@ async function trashContent() {
     }
 
     try {
-        const currentUrl = new URL(window.location.href)
-        const searchParams = currentUrl.searchParams;
-
-        isSaving = true;
         await saveContent();
-        const endpoint = `/api/trash?path=${window.location.pathname}&note=${searchParams.get('note')}`;
+        const endpoint = `/api/trash?path=${window.location.pathname}`;
         const response = await fetch(endpoint, {
             method: "POST",
             headers: {"Content-type": "application/json; charset=UTF-8"}
         });
         if (!response.ok) throw new Error('Network response was not ok');
 
-        if (searchParams.get('note') === null) {
-            window.location.href = '/';
-            return;
-        }
-        const cleanUrl = currentUrl.origin + currentUrl.pathname;
-        window.history.pushState({}, '', cleanUrl);
-        window.location.reload();
+        const curLocationParts = window.location.pathname.split('/');
+        curLocationParts.pop();
+        const newLocation = '/' + curLocationParts.join('/');
+
+        window.location.href = newLocation;
 
         return true;
     } catch (err) {
@@ -487,10 +477,6 @@ async function createNoteOrDir() {
     }
 
     try {
-        const currentUrl = new URL(window.location.href)
-        const searchParams = currentUrl.searchParams;
-
-        isSaving = true;
         await saveContent();
         const endpoint = `/api/create?path=${window.location.pathname}&name=${createName}`;
         const response = await fetch(endpoint, {
@@ -499,7 +485,7 @@ async function createNoteOrDir() {
         });
         if (!response.ok) throw new Error('Network response was not ok');
 
-        window.location.reload();
+        renderLeftSidebar();
 
         return true;
     } catch (err) {
@@ -538,19 +524,39 @@ async function renderApp() {
     MathJax.typesetPromise([rightSidebar, mainContent]).catch((err) => console.error('MathJax typesetting error:', err));
 }
 
-function renderLeftSidebar(dirtree) {
-    let upbutton = new URL(window.location.href).pathname;
+async function renderLeftSidebar() {
+    let dirtree;
+    try {
+        var endpoint;
+        if (window.location.pathname.length>1) endpoint = `/api/tree?path=${window.location.pathname}`;
+        else endpoint = '/api/tree';
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error('Network response was not ok');
+        dirtree = await response.json();
+    } catch (err) {
+        console.error('No se ha podido cargar la barra lateral', err);
+        return;
+    }
+
+    let upbutton = window.location.pathname;
+    let filename;
     if (upbutton!=='/') {
         let segments = upbutton.split('/');
-        segments.pop();
+        filename = segments.pop();
         if (segments.length>1) upbutton = segments.join('/');
-        else upbutton = '/'
+        else upbutton = ''
     } else {
         upbutton = '';
     }
     console.log(upbutton);
     let renderedHtml = nunjucks.renderString(plantilla_left_sidebar, { dirtree, upbutton });
     leftSidebar.innerHTML = renderedHtml;
+
+    document.querySelectorAll('.file-item').forEach(element => {
+        if (element.getAttribute('data-path')===window.location.pathname) {
+            element.classList.add('active');
+        }
+    });
 }
 
 // navigation
@@ -582,35 +588,14 @@ async function openFolder(folderDir) {
     window.location.href = folderDir;
 }
 
-async function loadNote(notedir) {
+async function loadNote() {
     try {
-        if (historial_contenido.length>0) {
-            saveBlock();
-            let result = await saveContent();
-            if (!result) {
-                alert('Error al guardar el documento abierto.');
-                return;
-            }
-        }
-
-        historial_contenido = [];
-        historial_index = -1;
-        contenido = null;
-        currentEditor = null;
-        editingBlockId = null;
-        previousHTMLcontent = null;
-
-        const endpoint = `/api/load?path=${window.location.pathname}&note=${(notedir)}`;
+        const endpoint = `/api/load?path=${window.location.pathname}`;
         const response = await fetch(endpoint);
         if (!response.ok) throw new Error('Network response was not ok');
         contenido = await response.json();
 
-        const currentUrl = new URL(window.location.href)
-        const searchParams = currentUrl.searchParams;
-        searchParams.set('note', notedir);
-        window.history.pushState(null, '', currentUrl.toString());
-
-        document.getElementById('note-title').textContent = notedir.split('/').pop();
+        document.getElementById('note-title').textContent = window.location.pathname.split('/').pop();
         
         guardarHistorial();
         renderApp();
@@ -619,6 +604,70 @@ async function loadNote(notedir) {
         console.error('No se han podido cargar el fichero', err);
     }
 }
+
+const searchInput = document.getElementById("search-input");
+const searchResults = document.getElementById("search-results");
+
+// Handle search input
+searchInput.addEventListener("input", async (e) => {
+
+    const query = e.target.value.trim().toLowerCase();
+    if (query === "") {
+        searchResults.style.display = "none";
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/search?path=${window.location.pathname}`, {
+            method: "POST",
+            body: JSON.stringify({'query': query}),
+            headers: {"Content-type": "application/json; charset=UTF-8"}
+        });
+        if (!response.ok) throw new Error("Failed to load blocks");
+        const searchresponse = await response.json();
+        console.log(searchresponse);
+        renderSearchResults(searchresponse, query);
+    } catch (err) {
+        console.error("Error loading blocks:", err);
+    }
+});
+
+function renderSearchResults(matches, query) {
+    if (matches.length === 0) {
+        searchResults.innerHTML = `<p>No results found for "${query}".</p>`;
+        searchResults.style.display = "block";
+        return;
+    }
+
+    const resultsHTML = matches.map(block => `
+        <div class="search-result-item" data-link="${block.link}">
+            <h4>${highlightQuery(block.link, query)}</h4>
+            <div class="search-snippet">${highlightQuery(block.content.slice(0, 200), query)}...</div>
+            <small>Modified: ${block.modified}</small>
+        </div>
+    `).join("");
+
+    searchResults.innerHTML = resultsHTML;
+    searchResults.style.display = "block";
+
+    document.querySelectorAll(".search-result-item").forEach(item => {
+        item.addEventListener("dblclick", () => {
+            window.location.href = item.getAttribute('data-link');
+        });
+    });
+}
+
+function highlightQuery(text, query) {
+    console.log(text);
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi");
+    return text.replace(regex, `<mark style="background: #61afef; color: black;">$1</mark>`);
+}
+
+document.addEventListener("click", (e) => {
+    if (!searchResults.contains(e.target) && e.target !== searchInput) {
+        searchResults.style.display = "none";
+    }
+});
 
 document.addEventListener('DOMContentLoaded', async function() {
     // searchInput.value = '';
@@ -642,40 +691,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
     
-    try {
-        var endpoint;
-        if (window.location.pathname.length>1) endpoint = `/api/tree?path=${window.location.pathname}`;
-        else endpoint = '/api/tree';
-        const response = await fetch(endpoint);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const dirtree = await response.json();
-        renderLeftSidebar(dirtree);
-    } catch (err) {
-        console.error('No se ha podido cargar la barra lateral', err);
-        return;
-    }
-
-    const searchParams = new URL(window.location.href).searchParams;
-    const curnote = searchParams.get('note');
-    if (curnote) {
-        loadNote(curnote);
-    }
+    renderLeftSidebar();
+    loadNote(window.location.pathname);
 });
 
-window.addEventListener('beforeunload', async function (e) {
-    if (historial_contenido.length>0 && !isSaving) {
-        isSaving = true;
-        await saveBlock();
-        await saveContent();
-        isSaving = false;
-    }
-});
+// window.addEventListener('beforeunload', async function (e) {
+//     if (historial_contenido.length>0 && !isSaving) {
+//         isSaving = true;
+//         await saveBlock();
+//         await saveContent();
+//         isSaving = false;
+//     }
+// });
 
-document.addEventListener('visibilitychange', async function (e) {
-    if (historial_contenido.length>0 && !isSaving) {
-        isSaving = true;
-        await saveBlock();
-        await saveContent();
-        isSaving = false;
-    }
-});
+// document.addEventListener('visibilitychange', async function (e) {
+//     if (historial_contenido.length>0 && !isSaving) {
+//         isSaving = true;
+//         await saveBlock();
+//         await saveContent();
+//         isSaving = false;
+//     }
+// });

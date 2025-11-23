@@ -7,7 +7,9 @@ def get_files_and_directories(path, rootpath):
     result = []
     for f in os.listdir(path):
         cur_path = os.path.join(path, f)
-        path_url = cur_path.replace(os.path.abspath(rootpath), '')
+        path_url = cur_path.replace(os.path.abspath(NOTES_DIR), '')
+        if f in ['papelera']:
+            continue
         if os.path.isdir(cur_path):
             subdir = get_files_and_directories(cur_path, rootpath)
         else:
@@ -26,6 +28,9 @@ def get_files_and_directories(path, rootpath):
 def list_all_files_and_directories(start_path):
     all_items = []
     for root, dirs, files in os.walk(start_path):
+        if root.replace(os.path.abspath(NOTES_DIR), '').startswith('/papelera'):
+            continue
+
         all_items.append(root.replace(os.path.abspath(NOTES_DIR), '')) 
             
         for file in files:

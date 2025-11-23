@@ -47,19 +47,17 @@
 <div class="app-layout">
     <aside class="sidebar-left">
         <div class="sidebar-header">
-            <h2 onclick="window.location.href = '/'">Notes</h2>
-            <button id="new-note-btn" class="icon-btn" title="New Note">+</button>
-            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+            <h2 onclick="window.location.href = '/'">Notas</h2>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Salir</a>
         </div>
         <div id="file-tree">
-            <!-- File tree will be populated by JS -->
             Loading...
         </div>
     </aside>
 
     <main class="main-content">
         <div id="note-header">
-            <h1><a href="/" id="note-title" style="text-decoration: none; color: inherit;">Select a note</a></h1>
+            <h1><a href="/" id="note-title" style="text-decoration: none; color: inherit;">Selecciona un fichero</a></h1>
             <div class="header-controls">
                 <div class="control-btn" id="undo-button" style="pointer-events: none;" title="Deshacer" onclick="event.stopPropagation(); handleUndoAction()">↩️</div>
                 <div class="control-btn" id="redo-button" style="pointer-events: none;" title="Rehacer" onclick="event.stopPropagation(); handleRedoAction()">↪️</div>
@@ -68,13 +66,14 @@
             </div>
         </div>
         <div id="note-editor">
-            <!-- Blocks will be rendered here -->
+            <!-- Los bloques se renderizan aqui -->
         </div>
     </main>
 
     <aside class="sidebar-right">
         <div class="search-box">
-            <input type="text" id="search-input" placeholder="Search...">
+            <input type="text" id="search-input" placeholder="Buscar...">
+            <div id="search-results"></div>
         </div>
         <div id="toc">
             <h3>Contenidos</h3>
