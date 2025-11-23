@@ -33,6 +33,8 @@ docker run -d \
   -e PASSWORD=password \
   -e NOTES_DIR=/notes \
   -v ~/notes:/notes \
+  --restart unless-stopped \
+  --name notas-app \
   notes-app
 
 

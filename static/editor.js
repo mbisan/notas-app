@@ -23,6 +23,7 @@ let editingBlockId = null;
 let previousHTMLcontent = null;
 let isSaving = false;
 let lastQueryString = window.location.search;
+let deleteOp = false;
 
 // document permanent elements
 const mainContent = document.getElementById('note-editor');
@@ -447,6 +448,7 @@ async function trashContent() {
     if (window.location.pathname==="/") return;
 
     const isConfirmed = confirm("Seguro que quieres eliminar?");
+    deleteOp = true;
 
     if (!isConfirmed) {
         console.log("Operación cancelada por el usuario.");
@@ -464,9 +466,9 @@ async function trashContent() {
 
         const curLocationParts = window.location.pathname.split('/');
         curLocationParts.pop();
-        const newLocation = '/' + curLocationParts.join('/');
-
-        window.location.href = newLocation;
+        const newLocation = curLocationParts.join('/');
+        if (newLocation==='') window.location.href = '/';
+        else window.location.href = newLocation;
 
         return true;
     } catch (err) {
@@ -639,6 +641,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 window.addEventListener('beforeunload', async function(event) {
+    if (deleteOp) {
+        return;
+    }
     console.log('Unloading');
     await saveBlock();
     await saveContent();
