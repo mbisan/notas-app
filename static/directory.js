@@ -85,7 +85,7 @@ async function renderLeftSidebar() {
     } else {
         upbutton = '';
     }
-    console.log(upbutton);
+
     let renderedHtml = nunjucks.renderString(plantilla_left_sidebar, { dirtree, upbutton });
     leftSidebar.innerHTML = renderedHtml;
 

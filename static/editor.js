@@ -36,9 +36,14 @@ function setupCodeMirror(containerElement, content) {
 
     containerElement.innerHTML = '';
 
+    CodeMirrorSpellChecker({
+        codeMirrorInstance: CodeMirror,
+    });
+
     const editor = CodeMirror(containerElement, {
         value: content,
-        mode: 'markdown',
+        mode: 'spell-checker',
+        backdrop: 'gfm',
         theme: '3024-night',
         lineNumbers: true,
         lineWrapping: true,
@@ -544,11 +549,10 @@ async function renderLeftSidebar() {
     let segments = upbutton.split('/');
     segments.pop();
     segments.pop();
-    console.log(segments);
+
     if (segments.length>0) upbutton = '/' + segments.join('/');
     else upbutton = ''
 
-    console.log(upbutton);
     let renderedHtml = nunjucks.renderString(plantilla_left_sidebar, { dirtree, upbutton });
     leftSidebar.innerHTML = renderedHtml;
 

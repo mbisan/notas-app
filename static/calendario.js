@@ -247,7 +247,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!response.ok) throw new Error('Network response was not ok');
     dataList = await response.json();
     eventCounts = aggregateCounts(dataList);
-    console.log(dataList);
 
     linkAggregates = aggregateLinks(dataList);
 
