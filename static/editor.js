@@ -572,14 +572,6 @@ function scrollToBlock(e, blockId) {
     blockEl.scrollIntoView({ behavior: 'smooth' });
 }
 
-function openImage(path) {
-    if (window.location.pathname!=='/') {
-        window.open(window.location.pathname + path, '_blank');
-    } else {
-        window.open(path, '_blank');
-    }    
-}
-
 function gotoDirectory() {
     let upbutton = window.location.pathname;
     if (upbutton!=='/') {

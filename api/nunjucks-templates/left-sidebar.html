@@ -41,7 +41,7 @@
         {% else %}
             {# File Item #}
             {% if item.isImage %}
-            <div class="file-item" data-path="{{ item.path }}" onclick="openImage('{{ item.path }}');">
+            <div class="file-item" data-path="{{ item.path }}" onclick="window.open('{{ item.path }}', '_blank');">
                 🖼️ {{ item.name }}
             </div>
             {% else %}

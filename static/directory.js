@@ -96,14 +96,6 @@ async function renderLeftSidebar() {
     });
 }
 
-function openImage(path) {
-    if (window.location.pathname!=='/') {
-        window.open(window.location.pathname + path, '_blank');
-    } else {
-        window.open(path, '_blank');
-    }    
-}
-
 document.addEventListener('DOMContentLoaded', async function() {
     // searchInput.value = '';
 
