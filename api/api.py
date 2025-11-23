@@ -10,7 +10,7 @@ from flask_login import login_required
 
 from werkzeug.utils import secure_filename
 
-from api.utils import list_all_files_and_directories, get_files_and_directories
+from api.utils import list_all_files_and_directories, get_files_and_directories, read_file
 
 
 NOTES_DIR = os.environ.get('NOTES_DIR', './notas')
@@ -24,28 +24,12 @@ def load_note():
         return 'Ruta no valida', 404
 
     file_dir=os.path.join(NOTES_DIR, str(request.args.get('path')).lstrip('/'))
-    if not file_dir.endswith('.md'):
-        return 'Solo se pueden cargar ficheros markdown (.md)', 500
+
+    if not os.path.exists(file_dir):
+        return 'Ruta no valida', 404
+
     try:
-        if not os.path.exists(os.path.dirname(file_dir)):
-            os.makedirs(os.path.dirname(file_dir))
-        if not os.path.exists(file_dir):
-            with open(file_dir, 'w') as f:
-                f.write('')
-
-        with open(file_dir, 'r') as f:
-            raw_data = f.read()
-
-        regex_pattern = re.compile(r'<!--\s*(.*?)\s*-->(.*?)<!--\s*end\s*-->', re.DOTALL)
-
-        blocks = []
-        for i, (header, content) in enumerate(re.findall(regex_pattern, raw_data)):
-            header_values: dict = eval('{' + header + '}')
-            blocks.append({
-                'content': content.strip(),
-                **header_values
-            }) 
-
+        blocks = read_file(file_dir, include_paths=False)
         return jsonify(blocks)
     except Exception as e:
         print(e)
@@ -215,18 +199,7 @@ def search():
         
         blocks = []
         for file_dir in todos_markdown:
-            with open(os.path.join(NOTES_DIR, file_dir.lstrip('/')), 'r') as f:
-                raw_data = f.read()
-
-            regex_pattern = re.compile(r'<!--\s*(.*?)\s*-->(.*?)<!--\s*end\s*-->', re.DOTALL)
-
-            for header, content in re.findall(regex_pattern, raw_data):
-                header_values: dict = eval('{' + header + '}')
-                blocks.append({
-                    'content': content.strip(),
-                    'link': file_dir,
-                    **header_values
-                })
+            blocks += read_file(os.path.join(NOTES_DIR, file_dir.lstrip('/')))
 
         query_result = list(filter(
             lambda x: search_query.lower() in x['content'].lower() or search_query.lower() in x['link'].lower(),

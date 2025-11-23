@@ -1,4 +1,5 @@
 import os
+import re
 
 NOTES_DIR = os.environ.get('NOTES_DIR', './notas')
 
@@ -38,3 +39,26 @@ def list_all_files_and_directories(start_path):
             all_items.append(full_path)
             
     return sorted([item if len(item)>0 else '/' for item in all_items])
+
+def read_file(file_path, include_paths: bool = True):
+    with open(file_path, 'r') as f:
+        raw_data = f.read()
+
+    regex_pattern = re.compile(r'<!--\s*(.*?)\s*-->(.*?)<!--\s*end\s*-->', re.DOTALL)
+
+    blocks = []
+    for i, (header, content) in enumerate(re.findall(regex_pattern, raw_data)):
+        header_values: dict = eval('{' + header + '}')
+        if include_paths:
+            blocks.append({
+                'content': content.strip(),
+                'link': file_path,
+                **header_values
+            })
+        else:
+            blocks.append({
+                'content': content.strip(),
+                **header_values
+            })
+    
+    return blocks
