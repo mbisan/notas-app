@@ -12,25 +12,22 @@ const marked = new Marked(
 );
 
 let plantilla_main_content = null;
-let plantilla_main_content_info = null;
 let plantilla_left_sidebar = null;
 let plantilla_right_sidebar = null;
+const MAX_HISTORY_SIZE = 50;
 let historial_contenido = [];
 let historial_index = -1;
-const MAX_HISTORY_SIZE = 50;
 let contenido = null;
-
-// document permanent elements
-const mainContent = document.getElementById('main-content');
-const leftSidebar = document.getElementById('left-sidebar');
-const rightSidebar = document.getElementById('right-sidebar');
-
-const toggleLeftButton = document.getElementById('toggle-left-sidebar');
-const toggleRightButton = document.getElementById('toggle-right-sidebar');
-
 let currentEditor = null;
 let editingBlockId = null;
 let previousHTMLcontent = null;
+let isSaving = false;
+let lastQueryString = window.location.search;
+
+// document permanent elements
+const mainContent = document.getElementById('note-editor');
+const leftSidebar = document.getElementById('file-tree');
+const rightSidebar = document.getElementById('toc-list');
 
 function setupCodeMirror(containerElement, content) {
     if (currentEditor) {
@@ -46,8 +43,8 @@ function setupCodeMirror(containerElement, content) {
         lineNumbers: true,
         lineWrapping: true,
         extraKeys: {
-            'Ctrl-Enter': saveContent,
-            'Shift-Enter': saveContent
+            'Ctrl-Enter': saveBlock,
+            'Shift-Enter': saveBlock
         }
     });
     
@@ -64,6 +61,10 @@ function setupCodeMirror(containerElement, content) {
         if (token.string.startsWith('/') && cursor.ch === token.end) {
             CodeMirror.showHint(cm, slashHint, { completeSingle: false });
         }
+    });
+
+    editor.on('blur', () => {
+        setTimeout(saveBlock, 200);
     });
     
     currentEditor = editor;
@@ -129,7 +130,7 @@ async function slashHint(cm) {
         ];
 
         try {
-            const endpoint = "/load-hint";
+            const endpoint = `/api/hint?path=${window.location.pathname}`;
             const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Network response was not ok');
             const posibles_links = await response.json();
@@ -228,7 +229,7 @@ function subirImagen(file, cm, placeholderPosition) {
     const formData = new FormData();
     formData.append('image', file);
 
-    fetch('/upload-image' + window.location.pathname, {
+    fetch(`/api/image?path=${window.location.pathname}`, {
         method: 'POST',
         body: formData
     })
@@ -259,44 +260,6 @@ function subirImagen(file, cm, placeholderPosition) {
     });
 }
 
-function handleNewBlock(containerId) {
-    if (containerId===editingBlockId) return;
-
-    if (currentEditor) {
-        const bloqueActual = contenido.find(element => `block-${element.index}` === editingBlockId);
-        if (bloqueActual) {
-            // hay cambios sin guardar, no cambio de sitio el editor
-            if (currentEditor.getValue() !== bloqueActual.content) return;
-        } else if (currentEditor.getValue() !== '') return;
-    }
-
-    let newBlockContent = ''
-    if (containerId.startsWith('block-')) {
-        const bloqueEditado = contenido.find(element => `block-${element.index}` === containerId);
-        newBlockContent = bloqueEditado.content;
-    }
-
-    // Find the newly created block placeholder
-    const blockElement = document.getElementById(containerId);
-    if (blockElement) {
-
-        if (editingBlockId) {
-            document.getElementById(editingBlockId).innerHTML = previousHTMLcontent;
-            document.getElementById(editingBlockId).classList.toggle('codemirror-editing'); 
-        };
-
-        previousHTMLcontent = blockElement.innerHTML;
-        editingBlockId = containerId;
-        blockElement.innerHTML = '';
-        blockElement.classList.toggle('codemirror-editing');
-        
-        const editor = setupCodeMirror(blockElement, newBlockContent);
-
-        editor.focus();
-        scrollToBlock(containerId);
-    }
-}
-
 function guardarHistorial() {
     if (historial_index<historial_contenido.length-1) {
         historial_contenido = historial_contenido.slice(0, historial_index+1);
@@ -318,7 +281,11 @@ function guardarHistorial() {
     }
 }
 
-function handleUndoAction() {    
+function handleUndoAction() {
+    if (editingBlockId) {
+        return;
+    }
+
     historial_index = historial_index-1;
     contenido = JSON.parse(JSON.stringify(historial_contenido[historial_index]));
 
@@ -331,6 +298,10 @@ function handleUndoAction() {
 }
 
 function handleRedoAction() {
+    if (editingBlockId) {
+        return;
+    }
+
     historial_index = historial_index+1;
     contenido = JSON.parse(JSON.stringify(historial_contenido[historial_index]));
 
@@ -342,94 +313,126 @@ function handleRedoAction() {
     renderApp();
 }
 
-function deleteBlock(blockId) {
+async function addBlock(blockId) {
     if (currentEditor && editingBlockId) {
         return;
     }
 
-    const deleteId = parseInt(blockId.replace('block-', ''), 10);
-    contenido.splice(deleteId-1, 1);
+    const newBlock = {
+        'type': 'markdown',
+        'created': luxon.DateTime.now().setZone("Europe/Madrid").toFormat("yyyy-MM-dd HH:mm:ss"),
+        'modified': luxon.DateTime.now().setZone("Europe/Madrid").toFormat("yyyy-MM-dd HH:mm:ss"),
+        'content': '',
+    };
 
-    contenido.forEach((element, i) => {
-        element.index = i + 1;
-    })
+    contenido.splice(blockId, 0, newBlock);
+
+    await renderApp();
+    editBlock(blockId+1);
+}
+
+function editBlock(blockId) {
+    if (editingBlockId) {
+        return;
+    }
+
+    const editorChildren = document.getElementById('note-editor').children;
+
+    const curBlockElement = editorChildren[blockId];
+    const curBlock = contenido[blockId-1]
+    previousHTMLcontent = curBlockElement.innerHTML;
+
+    const editor = setupCodeMirror(curBlockElement, curBlock.content);
+    editingBlockId = blockId;
+
+    editor.focus();
+    curBlockElement.scrollIntoView({ behavior: 'smooth' });
+}
+
+function moveBlock(blockId, direction) {
+    if (editingBlockId) {
+        return;
+    }
+
+    const newIndex = blockId + direction;
+    if (newIndex < 0 || newIndex >= contenido.length) return;
+
+    const block = contenido[blockId];
+    contenido.splice(blockId, 1);
+    contenido.splice(newIndex, 0, block);
 
     guardarHistorial();
     renderApp();
 }
 
-function saveContent() {
+function deleteBlock(blockId) {
+    if (editingBlockId) {
+        return;
+    }
+
+    contenido.splice(blockId, 1);
+
+    guardarHistorial();
+    renderApp();
+}
+
+async function saveBlock() {
     let renderizar = false;
-    if (!editingBlockId && !currentEditor) return;
-    if (editingBlockId.startsWith('block-')) {
-        // estamos editando un bloque que ya existe
-        const bloqueEditado = contenido.find(element => `block-${element.index}` === editingBlockId);
-        const nuevoContenido = currentEditor.getValue();
-        if (nuevoContenido !== bloqueEditado.content) {
-            bloqueEditado.content = nuevoContenido;
-            bloqueEditado.modified = luxon.DateTime.now().setZone("Europe/Madrid").toFormat("yyyy-MM-dd HH:mm:ss");
-            renderizar = true;
-            bloqueEditado.contentHTML = null;
-        } else {
-            document.getElementById(editingBlockId).innerHTML = previousHTMLcontent;
-            document.getElementById(editingBlockId).classList.toggle('codemirror-editing'); 
-        }
+    if (!editingBlockId) return;
+    // estamos editando un bloque que ya existe
+    const editorChildren = document.getElementById('note-editor').children;
 
-    } else if (editingBlockId.startsWith('editor-')) {
-        const nuevoContenido = currentEditor.getValue();
-        if (nuevoContenido !== '') {
-            renderizar = true;
+    const curBlockElement = editorChildren[editingBlockId];
+    const bloqueEditado = contenido[editingBlockId-1];
 
-            // recupero el indice del bloque que estoy editando
-            const newId = parseInt(editingBlockId.replace("editor-", ""), 10) + 1;
-            contenido.forEach(element => {
-                if (element.index>=newId) {
-                    element.index = element.index + 1;
-                }
-            })
+    const nuevoContenido = currentEditor.getValue();
+    if (nuevoContenido==='') {
+        let historial = false;
+        if (bloqueEditado.content!=='') historial = true;
+        contenido.splice(editingBlockId-1, 1);
 
-            // creo el bloque nuevo
-            const newBlock = {
-                'index': newId,
-                'type': 'markdown',
-                'created': luxon.DateTime.now().setZone("Europe/Madrid").toFormat("yyyy-MM-dd HH:mm:ss"),
-                'modified': luxon.DateTime.now().setZone("Europe/Madrid").toFormat("yyyy-MM-dd HH:mm:ss"),
-                'content': nuevoContenido,
-            }
-            
-            // inserto en la posición index
-            contenido.splice(newId-1, 0, newBlock);
-        } else {
-            document.getElementById(editingBlockId).innerHTML = previousHTMLcontent;
-            document.getElementById(editingBlockId).classList.toggle('codemirror-editing'); 
-        }
+        currentEditor = null;
+        editingBlockId = null;
+        previousHTMLcontent = null;
+
+        if (historial) guardarHistorial();
+        await renderApp();
+        return;
+    }
+
+    if (nuevoContenido !== bloqueEditado.content) {
+        bloqueEditado.content = nuevoContenido;
+        bloqueEditado.modified = luxon.DateTime.now().setZone("Europe/Madrid").toFormat("yyyy-MM-dd HH:mm:ss");
+        renderizar = true;
+        bloqueEditado.contentHTML = null;
+    } else {
+        curBlockElement.innerHTML = previousHTMLcontent;
     }
 
     currentEditor = null;
     editingBlockId = null;
     previousHTMLcontent = null;
 
-    document.getElementById('save-button').style.opacity = 1;
-    document.getElementById('save-button').style.pointerEvents = 'all';
-
     if (renderizar) {
-        guardarHistorial()
-        renderApp();
+        guardarHistorial();
+        await renderApp();
     }
 }
 
-async function saveToServer() {
+async function saveContent() {
     try {
-        const endpoint = "/save" + window.location.pathname;
+        const currentUrl = new URL(window.location.href)
+        const searchParams = currentUrl.searchParams;
+
+        if (!searchParams.get('note')) return;
+
+        const endpoint = `/api/save?path=${window.location.pathname}&note=${searchParams.get('note')}`;
         const response = await fetch(endpoint, {
             method: "POST",
             body: JSON.stringify(contenido),
             headers: {"Content-type": "application/json; charset=UTF-8"}
         });
         if (!response.ok) throw new Error('Network response was not ok');
-
-        document.getElementById('save-button').style.opacity = 0;
-        document.getElementById('save-button').style.pointerEvents = 'none';
 
         return true;
     } catch (err) {
@@ -438,150 +441,78 @@ async function saveToServer() {
     }
 }
 
-let draggedBlockId = null; // Global variable to store the ID of the block being dragged
+async function trashContent() {
 
-function enableDrag() {
-    if (currentEditor && editingBlockId) {
-        return false;
+    const isConfirmed = confirm("Seguro que quieres eliminar?");
+
+    if (!isConfirmed) {
+        console.log("Operación cancelada por el usuario.");
+        return false; 
     }
-    return true;
-}
-
-function handleDragStart(event) {
-    if (!enableDrag()) return;
-    
-    draggedBlockId = event.currentTarget.id.replace('drag-', '');
-    document.getElementById(`block-${draggedBlockId}`).classList.add('block-dragging');
-    event.dataTransfer.setData('text/plain', draggedBlockId);
-}
-
-function handleDragEnd(event) {
-    if (!enableDrag()) return;
-
-
-    event.preventDefault();
-    document.getElementById(`block-${draggedBlockId}`).classList.remove('block-dragging');
-}
-
-function handleDragOver(event) {
-    if (!enableDrag()) return;
-
-
-    event.preventDefault();
-}
-
-function handleDrop(event) {
-    if (!enableDrag()) return;
-
-    event.preventDefault();
-    
-    const draggedId = parseInt(event.dataTransfer.getData('text/plain'), 10);
-    const targetId = parseInt(event.currentTarget.id.replace('editor-', ''), 10);
-
-    if ((draggedId-1)===targetId) return;
-
-    const draggedBlockData = contenido.splice(draggedId-1, 1)[0];
-
-    if (targetId<(draggedId-1)) {
-        contenido.splice(targetId, 0, draggedBlockData);
-    } else {
-        contenido.splice(targetId-1, 0, draggedBlockData);
-    }
-
-    contenido.forEach((element, i) => {
-        element.index = i + 1;
-    })
-
-    guardarHistorial();
-    renderApp();
-}
-
-
-// searchbar
-
-const searchInput = document.getElementById("search-input");
-const searchResults = document.getElementById("search-results");
-
-let allBlocks = [];
-let isLoadingBlocks = false;
-
-// Fetch all blocks once when the page loads
-async function loadAllBlocks() {
-    if (isLoadingBlocks || allBlocks.length > 0) return;
-    isLoadingBlocks = true;
 
     try {
-        const response = await fetch("/load-everything");
-        if (!response.ok) throw new Error("Failed to load blocks");
-        allBlocks = await response.json();
-    } catch (err) {
-        console.error("Error loading blocks:", err);
-    } finally {
-        isLoadingBlocks = false;
-    }
-}
+        const currentUrl = new URL(window.location.href)
+        const searchParams = currentUrl.searchParams;
 
-// Handle search input
-searchInput.addEventListener("input", async (e) => {
-    loadAllBlocks();
-
-    const query = e.target.value.trim().toLowerCase();
-    if (query === "") {
-        searchResults.style.display = "none";
-        return;
-    }
-
-    const matches = allBlocks.filter(block =>
-        block.content.toLowerCase().includes(query) ||
-        block.link.toLowerCase().includes(query)
-    );
-
-    renderSearchResults(matches, query);
-});
-
-function renderSearchResults(matches, query) {
-    if (matches.length === 0) {
-        searchResults.innerHTML = `<p>No results found for "${query}".</p>`;
-        searchResults.style.display = "block";
-        return;
-    }
-
-    const resultsHTML = matches.map(block => `
-        <div class="search-result-item" data-link="${block.link}">
-            <h4>${highlightQuery(block.link, query)}</h4>
-            <div class="search-snippet">${highlightQuery(block.content.slice(0, 200), query)}...</div>
-            <small>Modified: ${block.modified}</small>
-        </div>
-    `).join("");
-
-    searchResults.innerHTML = resultsHTML;
-    searchResults.style.display = "block";
-
-    document.querySelectorAll(".search-result-item").forEach(item => {
-        item.addEventListener("click", () => {
-            const link = item.getAttribute("data-link");
-            window.location.href = link;
+        isSaving = true;
+        await saveContent();
+        const endpoint = `/api/trash?path=${window.location.pathname}&note=${searchParams.get('note')}`;
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {"Content-type": "application/json; charset=UTF-8"}
         });
-    });
-}
+        if (!response.ok) throw new Error('Network response was not ok');
 
-function highlightQuery(text, query) {
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi");
-    return text.replace(regex, `<mark style="background: #61afef; color: black;">$1</mark>`);
-}
+        if (searchParams.get('note') === null) {
+            window.location.href = '/';
+            return;
+        }
+        const cleanUrl = currentUrl.origin + currentUrl.pathname;
+        window.history.pushState({}, '', cleanUrl);
+        window.location.reload();
 
-document.addEventListener("click", (e) => {
-    if (!searchResults.contains(e.target) && e.target !== searchInput) {
-        searchResults.style.display = "none";
+        return true;
+    } catch (err) {
+        console.error('No se ha podido guardar', err);
+        return false;
     }
-});
+}
 
+async function createNoteOrDir() {
+    const createName = prompt("Insertar nombre del fichero (.md) o directorio:");
+
+    if (!createName) {
+        console.log("Operación cancelada por el usuario.");
+        return false; 
+    }
+
+    try {
+        const currentUrl = new URL(window.location.href)
+        const searchParams = currentUrl.searchParams;
+
+        isSaving = true;
+        await saveContent();
+        const endpoint = `/api/create?path=${window.location.pathname}&name=${createName}`;
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {"Content-type": "application/json; charset=UTF-8"}
+        });
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        window.location.reload();
+
+        return true;
+    } catch (err) {
+        console.error('No se ha podido guardar', err);
+        return false;
+    }
+}
 
 async function renderApp() {
     console.log('Renderizando contenido')
     
     const headers = []
-    for (const element of contenido) {
+    for (const [index, element] of contenido.entries()) {
         if (!element.contentHTML) {
             element.contentHTML = await marked.parse(element.content);            
         }
@@ -591,9 +522,9 @@ async function renderApp() {
             const h1match = line.match(/^#\s+(.+)/);
             const h2match = line.match(/^##\s+(.+)/);
             if (h1match) {
-                headers.push({ level: 1, text: h1match[1], blockIndex: element.index });
+                headers.push({ level: 1, text: h1match[1], blockIndex: index });
             } else if (h2match) {
-                headers.push({ level: 2, text: h2match[1], blockIndex: element.index });
+                headers.push({ level: 2, text: h2match[1], blockIndex: index });
             }
         });
     }
@@ -608,45 +539,101 @@ async function renderApp() {
 }
 
 function renderLeftSidebar(dirtree) {
-    let renderedHtml = nunjucks.renderString(plantilla_left_sidebar, { dirtree });
+    let upbutton = new URL(window.location.href).pathname;
+    if (upbutton!=='/') {
+        let segments = upbutton.split('/');
+        segments.pop();
+        if (segments.length>1) upbutton = segments.join('/');
+        else upbutton = '/'
+    } else {
+        upbutton = '';
+    }
+    console.log(upbutton);
+    let renderedHtml = nunjucks.renderString(plantilla_left_sidebar, { dirtree, upbutton });
     leftSidebar.innerHTML = renderedHtml;
 }
 
 // navigation
-function scrollToBlock(blockId) {
-    const block_id = parseInt(blockId.replace('block-', ''), 10)-1;
-    const separator = document.getElementById(`editor-${block_id}`);
-    if (separator) separator.scrollIntoView({ behavior: 'smooth'});
+function scrollToBlock(e, blockId) {
+    e.preventDefault();
+    
+    const container = document.getElementById('note-editor');
+    const blockEl = container.children[blockId + 1];
+    blockEl.scrollIntoView({ behavior: 'smooth' });
 }
 
-function toggleLeftSidebar() {
-    leftSidebar.classList.toggle('left-sidebar-hidden');
-    layout.classList.toggle('left-hidden'); 
+function openImage(path) {
+    if (window.location.pathname!=='/') {
+        window.open(window.location.pathname + path, '_blank');
+    } else {
+        window.open(path, '_blank');
+    }    
 }
 
-function toggleRightSidebar() {
-    rightSidebar.classList.toggle('right-sidebar-hidden');
-    layout.classList.toggle('right-hidden'); 
+async function openFolder(folderDir) {
+    if (historial_contenido.length>0) {
+        saveBlock();
+        let result = await saveContent();
+        if (!result) {
+            alert('Error al guardar el documento abierto.');
+            return;
+        }
+    }
+    window.location.href = folderDir;
+}
+
+async function loadNote(notedir) {
+    try {
+        if (historial_contenido.length>0) {
+            saveBlock();
+            let result = await saveContent();
+            if (!result) {
+                alert('Error al guardar el documento abierto.');
+                return;
+            }
+        }
+
+        historial_contenido = [];
+        historial_index = -1;
+        contenido = null;
+        currentEditor = null;
+        editingBlockId = null;
+        previousHTMLcontent = null;
+
+        const endpoint = `/api/load?path=${window.location.pathname}&note=${(notedir)}`;
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error('Network response was not ok');
+        contenido = await response.json();
+
+        const currentUrl = new URL(window.location.href)
+        const searchParams = currentUrl.searchParams;
+        searchParams.set('note', notedir);
+        window.history.pushState(null, '', currentUrl.toString());
+
+        document.getElementById('note-title').textContent = notedir.split('/').pop();
+        
+        guardarHistorial();
+        renderApp();
+
+    } catch (err) {
+        console.error('No se han podido cargar el fichero', err);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-    searchInput.value = '';
+    // searchInput.value = '';
 
     // cargar plantillas
     try {
-        let response = await fetch('/nunjucks-templates/main-content.html');
+        let response = await fetch('/api/templates?path=main-content.html');
         if (!response.ok) throw new Error('Network response was not ok');
         plantilla_main_content = await response.text();
 
-        response = await fetch('/nunjucks-templates/main-content-info.html');
-        if (!response.ok) throw new Error('Network response was not ok');
-        plantilla_main_content_info = await response.text();
-
-        response = await fetch('/nunjucks-templates/right-sidebar.html');
+        response = await fetch('/api/templates?path=right-sidebar.html');
         if (!response.ok) throw new Error('Network response was not ok');
         plantilla_right_sidebar = await response.text();
 
-        response = await fetch('/nunjucks-templates/left-sidebar.html');
+        response = await fetch('/api/templates?path=left-sidebar.html');
         if (!response.ok) throw new Error('Network response was not ok');
         plantilla_left_sidebar = await response.text();
     } catch (err) {
@@ -654,75 +641,41 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('main-content').innerHTML = 'No se ha podido cargar la app';
         return;
     }
-
-    // cargar fichero solicitado
-    if (window.location.pathname.endsWith('.md')) {
-        try {
-            const endpoint = "/load" + window.location.pathname;
-            const response = await fetch(endpoint);
-            if (!response.ok) throw new Error('Network response was not ok');
-            contenido = await response.json();
-        } catch (err) {
-            console.error('No se han podido cargar el fichero', err);
-            document.getElementById('main-content').innerHTML = 'No se ha podido cargar el fichero';
-            // return;
-        }
-    } else {
-        try {
-            const endpoint = "/load-everything";
-            const response = await fetch(endpoint);
-            if (!response.ok) throw new Error('Network response was not ok');
-            contenido = await response.json();
-            contenido = contenido.slice(0, 50);
-            plantilla_main_content = plantilla_main_content_info;
-            plantilla_right_sidebar = '';
-        } catch (err) {
-            console.error('No se han podido cargar el fichero', err);
-            document.getElementById('main-content').innerHTML = 'No se ha podido cargar el fichero';
-        }
-    }
     
     try {
-        const endpoint = "/load-dirtree" + window.location.pathname;
+        var endpoint;
+        if (window.location.pathname.length>1) endpoint = `/api/tree?path=${window.location.pathname}`;
+        else endpoint = '/api/tree';
         const response = await fetch(endpoint);
         if (!response.ok) throw new Error('Network response was not ok');
         const dirtree = await response.json();
         renderLeftSidebar(dirtree);
     } catch (err) {
-        console.error('No se han podido cargar la barra lateral', err);
-        document.getElementById('main-content').innerHTML = 'No se ha podido cargar la barra lateral';
+        console.error('No se ha podido cargar la barra lateral', err);
         return;
     }
 
-    if (contenido) {
-        guardarHistorial();
-
-        renderApp();
+    const searchParams = new URL(window.location.href).searchParams;
+    const curnote = searchParams.get('note');
+    if (curnote) {
+        loadNote(curnote);
     }
 });
 
-async function beforeNavigation() {
-    saveContent();
-    return saveToServer();
-}
+window.addEventListener('beforeunload', async function (e) {
+    if (historial_contenido.length>0 && !isSaving) {
+        isSaving = true;
+        await saveBlock();
+        await saveContent();
+        isSaving = false;
+    }
+});
 
-document.addEventListener("click", async (event) => {
-    if (!window.location.href.endsWith('.md')) return;
-
-    const link = event.target.closest("a");
-    if (!link || !link.getAttribute("href")) return;
-
-    const href = link.getAttribute("href");
-
-    if (href.startsWith("#") || href.startsWith("javascript:")) return;
-
-    event.preventDefault();
-    const proceed = await beforeNavigation(href);
-    console.log(proceed);
-
-    if (proceed) {
-        window.location.href = href;
-    } else {
-        console.log("Navigation cancelled by beforeNavigation()");
+document.addEventListener('visibilitychange', async function (e) {
+    if (historial_contenido.length>0 && !isSaving) {
+        isSaving = true;
+        await saveBlock();
+        await saveContent();
+        isSaving = false;
     }
 });

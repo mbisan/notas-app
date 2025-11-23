@@ -1,3 +1,39 @@
+{% if items.length==0 %}
+<div>
+  <button class="add-block-btn" onclick="addBlock(0)">+ Nuevo Bloque</button>
+</div>
+{% else %}
+<div>
+  <button class="add-block-btn" onclick="addBlock(0)">+ Nuevo Bloque al principio</button>
+</div>
+
+{% for item in items %}
+  <div class="block-container">
+
+    <div class="block-controls">
+      <div class="control-btn" title="Añadir bloque arriba" onclick="event.stopPropagation(); addBlock({{ loop.index-1 }})">⬆+</div>
+      <div class="control-btn" title="Mover bloque arriba" onclick="event.stopPropagation(); moveBlock({{ loop.index-1 }}, -1)">⬆</div>
+      <div class="control-btn" title="Eliminar bloque" onclick="event.stopPropagation(); deleteBlock({{ loop.index-1 }})">🗑</div>
+      <div class="control-btn" title="Mover bloque abajo" onclick="event.stopPropagation(); moveBlock({{ loop.index-1 }}, 1)">⬇</div>
+      <div class="control-btn" title="Añadir bloque abajo" onclick="event.stopPropagation(); addBlock({{ loop.index-1+1 }})">⬇+</div>
+    </div>
+  
+    <div class="block-content" ondblclick="event.stopPropagation(); editBlock({{ loop.index }})">
+      {{ item.contentHTML | safe }}
+    </div>
+
+    <div class="block-info">
+      Modified: {{ item.modified }}
+    </div>
+
+  </div>
+{% endfor %}
+
+<div>
+  <button class="add-block-btn" onclick="addBlock({{ items.length }})">+ Nuevo Bloque al final</button>
+</div>
+{% endif %}
+<!-- 
 <div class="editor-placeholder" id="editor-0"
   ondrop="handleDrop(event)"
   ondragover="handleDragOver(event)"
@@ -49,4 +85,4 @@
 </div>
 </div>
 
-{% endfor %}
+{% endfor %} -->

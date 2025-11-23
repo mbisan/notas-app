@@ -1,9 +1,0 @@
-<h3>Contenido</h3>
-<hr class="cell-separator">
-<ul>
-{% for header in headers %}
-<li class="right-sidebar-link" style="margin-left: {{ (header.level - 1)*15 }}px;" onclick="scrollToBlock('block-{{ header.blockIndex }}')">
-{{ header.text }}
-</li>
-{% endfor %}
-</ul>

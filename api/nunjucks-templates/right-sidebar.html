@@ -1,0 +1,5 @@
+{% for header in headers %}
+<li class="right-sidebar-link" style="padding-left: {{ (header.level - 1)*10 }}px;">
+<a href="#"  onclick="scrollToBlock(event, {{ header.blockIndex }});">{{ header.text }}</a>
+</li>
+{% endfor %}

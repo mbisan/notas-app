@@ -18,6 +18,7 @@
     </script>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
@@ -43,48 +44,43 @@
 </head>
 <body>
 
-<div id="top-bar">
-    <div id="sidebar-toggles">
-        <button id="toggle-left-sidebar" title="Toggle Left Sidebar" onclick="toggleLeftSidebar()">
-            <span class="icon"></span> </button>
-    </div>
+<div class="app-layout">
+    <aside class="sidebar-left">
+        <div class="sidebar-header">
+            <h2 onclick="window.location.href = '/'">Notes</h2>
+            <button id="new-note-btn" class="icon-btn" title="New Note">+</button>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+        </div>
+        <div id="file-tree">
+            <!-- File tree will be populated by JS -->
+            Loading...
+        </div>
+    </aside>
 
-    <div id="undo-redo">
-        <button id="undo-button" title="Deshacer" onclick="handleUndoAction()">
-            <span class="icon">↩️</button>
-        <button id="redo-button" title="Rehacer" onclick="handleRedoAction()">
-            <span class="icon">↪️</button>
-    </div>
+    <main class="main-content">
+        <div id="note-header">
+            <h1><a href="/" id="note-title" style="text-decoration: none; color: inherit;">Select a note</a></h1>
+            <div class="header-controls">
+                <div class="control-btn" id="undo-button" style="pointer-events: none;" title="Deshacer" onclick="event.stopPropagation(); handleUndoAction()">↩️</div>
+                <div class="control-btn" id="redo-button" style="pointer-events: none;" title="Rehacer" onclick="event.stopPropagation(); handleRedoAction()">↪️</div>
+                <div class="control-btn" id="save-button" title="Guardar al disco" onclick="event.stopPropagation(); saveContent()">💾</div>
+                <div class="control-btn" id="trash-button" title="Mover a la papelera" onclick="event.stopPropagation(); trashContent()">🗑</div>
+            </div>
+        </div>
+        <div id="note-editor">
+            <!-- Blocks will be rendered here -->
+        </div>
+    </main>
 
-    <div id="link-inicio">
-        <a href="/">Inicio</a>
-    </div>
-
-    <div id="link-logout">
-        <a href="/logout">Salir</a>
-    </div>
-
-    <div id="search-bar-container">
-        <input type="text" id="search-input" placeholder="Buscar...">
-    </div>
-
-    <div id="search-results"></div>
-
-    <button id="save-button" title="Save" onclick="saveToServer()">
-        <span class="icon">💾</button>
-    
-    <div id="sidebar-toggles">
-        <button id="toggle-right-sidebar" title="Toggle Right Sidebar" onclick="toggleRightSidebar()">
-            <span class="icon"></span> </button>
-    </div>
-</div>
-
-<div id="layout">
-    <div id="left-sidebar"></div>
-
-    <div id="main-content"></div>
-
-    <div id="right-sidebar"></div>
+    <aside class="sidebar-right">
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Search...">
+        </div>
+        <div id="toc">
+            <h3>Contenidos</h3>
+            <ul id="toc-list"></ul>
+        </div>
+    </aside>
 </div>
 
 <script src="{{ url_for('static', filename='editor.js') }}"></script>
