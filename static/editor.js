@@ -42,6 +42,8 @@ function setupCodeMirror(containerElement, content) {
         theme: '3024-night',
         lineNumbers: true,
         lineWrapping: true,
+        matchBrackets: true,
+        autoCloseBrackets: true,
         extraKeys: {
             'Ctrl-Enter': saveBlock,
             'Shift-Enter': saveBlock
