@@ -90,7 +90,7 @@ def logout():
 @notas_app.route('/', methods=['GET'])
 @login_required
 def main_page():
-    return render_template('note.html')
+    return render_template('directory.html')
 
 @notas_app.route('/<path:slug>', methods=['GET'])
 @login_required
@@ -98,10 +98,13 @@ def view_note(slug=''):
     if slug.endswith('.png') or slug.endswith('.jpg'):
         return send_from_directory(directory=os.path.dirname(os.path.join(NOTES_DIR, slug)), path=os.path.basename(slug))
 
-    if os.path.isdir(os.path.join(NOTES_DIR, slug)):
-        return 'Not implemented', 500
-    else:
+    if os.path.isdir(os.path.join(NOTES_DIR, slug)) and os.path.exists(os.path.join(NOTES_DIR, slug)):
+        return render_template('directory.html')
+
+    if slug.endswith('.md') and os.path.exists(os.path.join(NOTES_DIR, slug)):
         return render_template('note.html')
+    
+    return 'File or directory not found', 404
 
 
 notas_app.register_blueprint(api)

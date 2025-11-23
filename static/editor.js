@@ -539,15 +539,13 @@ async function renderLeftSidebar() {
     }
 
     let upbutton = window.location.pathname;
-    let filename;
-    if (upbutton!=='/') {
-        let segments = upbutton.split('/');
-        filename = segments.pop();
-        if (segments.length>1) upbutton = segments.join('/');
-        else upbutton = ''
-    } else {
-        upbutton = '';
-    }
+    let segments = upbutton.split('/');
+    segments.pop();
+    segments.pop();
+    console.log(segments);
+    if (segments.length>0) upbutton = '/' + segments.join('/');
+    else upbutton = ''
+
     console.log(upbutton);
     let renderedHtml = nunjucks.renderString(plantilla_left_sidebar, { dirtree, upbutton });
     leftSidebar.innerHTML = renderedHtml;
@@ -574,6 +572,19 @@ function openImage(path) {
     } else {
         window.open(path, '_blank');
     }    
+}
+
+function gotoDirectory() {
+    let upbutton = window.location.pathname;
+    if (upbutton!=='/') {
+        let segments = upbutton.split('/');
+        segments.pop();
+        if (segments.length>1) upbutton = segments.join('/');
+        else upbutton = '/'
+    } else {
+        upbutton = '';
+    }
+    window.location.href = upbutton;
 }
 
 async function openFolder(folderDir) {
@@ -605,74 +616,7 @@ async function loadNote() {
     }
 }
 
-const searchInput = document.getElementById("search-input");
-searchInput.value = '';
-const searchResults = document.getElementById("search-results");
-
-// Handle search input
-searchInput.addEventListener("input", async (e) => {
-
-    const query = e.target.value.trim().toLowerCase();
-    if (query === "") {
-        searchResults.style.display = "none";
-        return;
-    }
-
-    try {
-        const response = await fetch(`/api/search?path=${window.location.pathname}`, {
-            method: "POST",
-            body: JSON.stringify({'query': query}),
-            headers: {"Content-type": "application/json; charset=UTF-8"}
-        });
-        if (!response.ok) throw new Error("Failed to load blocks");
-        const searchresponse = await response.json();
-        console.log(searchresponse);
-        renderSearchResults(searchresponse, query);
-    } catch (err) {
-        console.error("Error loading blocks:", err);
-    }
-});
-
-function renderSearchResults(matches, query) {
-    if (matches.length === 0) {
-        searchResults.innerHTML = `<p>No results found for "${query}".</p>`;
-        searchResults.style.display = "block";
-        return;
-    }
-
-    const resultsHTML = matches.map(block => `
-        <div class="search-result-item" data-link="${block.link}">
-            <h4>${highlightQuery(block.link, query)}</h4>
-            <div class="search-snippet">${highlightQuery(block.content.slice(0, 200), query)}...</div>
-            <small>Modified: ${block.modified}</small>
-        </div>
-    `).join("");
-
-    searchResults.innerHTML = resultsHTML;
-    searchResults.style.display = "block";
-
-    document.querySelectorAll(".search-result-item").forEach(item => {
-        item.addEventListener("dblclick", () => {
-            window.location.href = item.getAttribute('data-link');
-        });
-    });
-}
-
-function highlightQuery(text, query) {
-    console.log(text);
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi");
-    return text.replace(regex, `<mark style="background: #61afef; color: black;">$1</mark>`);
-}
-
-document.addEventListener("click", (e) => {
-    if (!searchResults.contains(e.target) && e.target !== searchInput) {
-        searchResults.style.display = "none";
-    }
-});
-
 document.addEventListener('DOMContentLoaded', async function() {
-    // searchInput.value = '';
-
     // cargar plantillas
     try {
         let response = await fetch('/api/templates?path=main-content.html');
@@ -693,23 +637,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     renderLeftSidebar();
-    loadNote(window.location.pathname);
+    loadNote();
 });
 
-// window.addEventListener('beforeunload', async function (e) {
-//     if (historial_contenido.length>0 && !isSaving) {
-//         isSaving = true;
-//         await saveBlock();
-//         await saveContent();
-//         isSaving = false;
-//     }
-// });
-
-// document.addEventListener('visibilitychange', async function (e) {
-//     if (historial_contenido.length>0 && !isSaving) {
-//         isSaving = true;
-//         await saveBlock();
-//         await saveContent();
-//         isSaving = false;
-//     }
-// });
+window.addEventListener('beforeunload', async function(event) {
+    console.log('Unloading');
+    await saveBlock();
+    await saveContent();
+})

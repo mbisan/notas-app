@@ -59,10 +59,6 @@
         <div id="note-header">
             <h1><div id="note-title" style="text-decoration: none; color: inherit;">Selecciona un fichero</div></h1>
             <div class="header-controls">
-                <div class="control-btn" id="close-button" style="pointer-events: all;" title="Cerrar Nota" onclick="event.stopPropagation(); gotoDirectory()">❌</div>
-                <div class="control-btn" id="undo-button" style="pointer-events: none;" title="Deshacer" onclick="event.stopPropagation(); handleUndoAction()">↩️</div>
-                <div class="control-btn" id="redo-button" style="pointer-events: none;" title="Rehacer" onclick="event.stopPropagation(); handleRedoAction()">↪️</div>
-                <div class="control-btn" id="save-button" title="Guardar al disco" onclick="event.stopPropagation(); saveContent()">💾</div>
                 <div class="control-btn" id="trash-button" title="Mover a la papelera" onclick="event.stopPropagation(); trashContent()">🗑</div>
             </div>
         </div>
@@ -76,14 +72,10 @@
             <input type="text" id="search-input" placeholder="Buscar...">
             <div id="search-results"></div>
         </div>
-        <div id="toc">
-            <h3>Contenidos</h3>
-            <ul id="toc-list"></ul>
-        </div>
     </aside>
 </div>
 
-<script src="{{ url_for('static', filename='editor.js') }}"></script>
+<script src="{{ url_for('static', filename='directory.js') }}"></script>
 <script src="{{ url_for('static', filename='search.js') }}"></script>
 </body>
 </html>

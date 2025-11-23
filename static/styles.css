@@ -327,3 +327,7 @@ button[type="submit"]:hover {
 .block-container img {
   max-width: 100%;
 }
+
+.search-result-item {
+    cursor: pointer;
+}
