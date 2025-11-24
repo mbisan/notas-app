@@ -24,7 +24,7 @@ NOTES_DIR = os.environ.get('NOTES_DIR', './notas')
 if not os.path.exists(NOTES_DIR):
     os.makedirs(NOTES_DIR)
     with open(os.path.join(NOTES_DIR, 'test.md'), 'w') as f:
-        f.write('''<!-- {"created": "21/11/2025, 23:17:43", "modified": "21/11/2025, 23:17:50", "type": "markdown"} -->
+        f.write('''<!-- "created": "2025-11-21 23:17:43", "modified": "2025-11-21 23:17:50", "type": "markdown" -->
 Test
 <!-- end -->
 ''')

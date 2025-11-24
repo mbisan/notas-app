@@ -513,13 +513,22 @@ async function renderApp() {
         }
 
         const lines = element.content.split('\n');
+        let insideCodeBlock = false;
+
         lines.forEach(line => {
-            const h1match = line.match(/^#\s+(.+)/);
-            const h2match = line.match(/^##\s+(.+)/);
-            if (h1match) {
-                headers.push({ level: 1, text: h1match[1], blockIndex: index });
-            } else if (h2match) {
-                headers.push({ level: 2, text: h2match[1], blockIndex: index });
+            if (line.match(/^\s*```/)) {
+                insideCodeBlock = !insideCodeBlock;
+                return;
+            }
+
+            if (!insideCodeBlock) {
+                const h1match = line.match(/^#\s+(.+)/);
+                const h2match = line.match(/^##\s+(.+)/);
+                if (h1match) {
+                    headers.push({ level: 1, text: h1match[1], blockIndex: index });
+                } else if (h2match) {
+                    headers.push({ level: 2, text: h2match[1], blockIndex: index });
+                }
             }
         });
     }
