@@ -536,7 +536,29 @@ async function renderApp() {
     let renderedHtml = nunjucks.renderString(plantilla_main_content, { items: contenido });
     mainContent.innerHTML = renderedHtml;
 
-    renderedHtml = nunjucks.renderString(plantilla_right_sidebar, { headers: headers });
+    const contenidoOrdenadoModified = contenido.map((item, index) => ({
+        current_index: index,
+        ...item
+    })).sort((a, b) => {
+        const dateA = luxon.DateTime.fromFormat(a.modified, 'yyyy-MM-dd HH:mm:ss');
+        const dateB = luxon.DateTime.fromFormat(b.modified, 'yyyy-MM-dd HH:mm:ss');
+        return dateB.toMillis() - dateA.toMillis();
+    });
+
+    const contenidoOrdenadoCreated = contenido.map((item, index) => ({
+        current_index: index,
+        ...item
+    })).sort((a, b) => {
+        const dateA = luxon.DateTime.fromFormat(a.created, 'yyyy-MM-dd HH:mm:ss');
+        const dateB = luxon.DateTime.fromFormat(b.created, 'yyyy-MM-dd HH:mm:ss');
+        return dateB.toMillis() - dateA.toMillis();
+    });
+
+    renderedHtml = nunjucks.renderString(plantilla_right_sidebar, {
+        headers: headers,
+        itemsModified: contenidoOrdenadoModified,
+        itemsCreated: contenidoOrdenadoCreated
+    });
     rightSidebar.innerHTML = renderedHtml;
 
     MathJax.typesetPromise([rightSidebar, mainContent]).catch((err) => console.error('MathJax typesetting error:', err));

@@ -3,3 +3,32 @@
 <a href="#"  onclick="scrollToBlock(event, {{ header.blockIndex }});">{{ header.text }}</a>
 </li>
 {% endfor %}
+<hr style="margin-top: 50px; margin-bottom: 5px;">
+
+<div id="modifiedTimes" class="inactiveTimeList">
+<button id="toggle-sort-button" onclick="document.getElementById('modifiedTimes').classList.toggle('inactiveTimeList'); document.getElementById('createdTimes').classList.toggle('inactiveTimeList');">
+    Bloques por Fecha de Modificación
+</button>
+
+    <ul>
+    {% for item in itemsModified %}
+        <li class="right-sidebar-link">
+        <a href="#"  onclick="scrollToBlock(event, {{ item.current_index }});"><b>{{ item.current_index+1 }}</b> - {{ item.modified }}</a>
+        </li>
+    {% endfor %}
+    </ul>
+
+</div>
+
+<div id="createdTimes">
+<button id="toggle-sort-button" onclick="document.getElementById('modifiedTimes').classList.toggle('inactiveTimeList'); document.getElementById('createdTimes').classList.toggle('inactiveTimeList');">
+    Bloques por Fecha de Creación
+</button>
+    <ul >
+    {% for item in itemsCreated %}
+        <li class="right-sidebar-link">
+        <a href="#"  onclick="scrollToBlock(event, {{ item.current_index }});"><b>{{ item.current_index+1 }}</b> - {{ item.created }}</a>
+        </li>
+    {% endfor %}
+    </ul>
+</div>

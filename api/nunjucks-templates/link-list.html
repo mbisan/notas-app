@@ -6,7 +6,7 @@
 
 {% for linkData in linksToDisplay %}
     <div class="link-item">
-        <a href="{{ linkData.link }}">{{ linkData.link.split('/').pop() }}</a>
+        <a href="{{ linkData.link }}">{{ linkData.link.split('/').pop() }} - {{ linkData.lastModified.toFormat("yyyy-MM-dd HH:mm:ss") }}</a>
         <div class="link-details">
             {% if selectedDate %}
                 {# Day Selected Mode: Show E, C, M, T #}
