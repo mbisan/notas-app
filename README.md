@@ -45,3 +45,26 @@ docker run \
   -e NOTES_DIR=/notes \
   -v ~/notes:/notes \
   notes-app
+
+https://wiki.archlinux.org/title/Systemd/User
+
+El servicio se puede definir mediante:
+
+```
+[Unit]
+Description=Gunicorn instance for notas_app
+After=network.target
+
+[Service]
+WorkingDirectory=/home/martin/notas-app
+Environment="USERNAME=martin"
+Environment="PASSWORD=password"
+Environment="NOTES_DIR=/home/martin/notes"
+ExecStart=/home/martin/notas-app/.venv/bin/gunicorn --workers 4 --bind 0.0.0.0:8050 --access-logfile - notas_app:notas_app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+y se coloca en: `~/.config/systemd/user/`

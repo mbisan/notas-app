@@ -103,7 +103,7 @@ def view_note(slug=''):
 
     if slug.endswith('.md') and os.path.exists(os.path.join(NOTES_DIR, slug)):
         return render_template('note.html')
-    
+
     return 'File or directory not found', 404
 
 
